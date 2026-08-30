@@ -1,6 +1,6 @@
 # Settings
 
-Open **Settings -> Community plugins -> Export with Dependencies**. Each option below lists the setting key stored in the plugin's `data.json`.
+Open **Settings -> Community plugins -> Advanced Markdown Export**. Each option below lists the setting key stored in the plugin's `data.json`.
 
 ## What arrives checked
 

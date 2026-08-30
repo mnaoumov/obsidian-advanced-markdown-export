@@ -11,7 +11,7 @@ import {
  * template's own plugin id: the moment you fork this repo and set your own id in manifest.json it becomes
  * inert, so clones release normally (you can also just delete this guard).
  */
-const TEMPLATE_PLUGIN_ID = 'export-with-dependencies';
+const TEMPLATE_PLUGIN_ID = 'advanced-markdown-export';
 
 interface Manifest {
   id: string;

@@ -10,8 +10,8 @@ Contributions are welcome! Here's how to get started.
 ## Setup
 
 ```bash
-git clone https://github.com/mnaoumov/obsidian-export-with-dependencies.git
-cd obsidian-export-with-dependencies
+git clone https://github.com/mnaoumov/obsidian-advanced-markdown-export.git
+cd obsidian-advanced-markdown-export
 npm install
 ```
 

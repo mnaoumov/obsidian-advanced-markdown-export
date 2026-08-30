@@ -1,6 +1,6 @@
-# Export with Dependencies
+# Advanced Markdown Export
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-export-with-dependencies)](https://github.com/mnaoumov/obsidian-export-with-dependencies/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-export-with-dependencies/total)](https://github.com/mnaoumov/obsidian-export-with-dependencies/releases)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-advanced-markdown-export)](https://github.com/mnaoumov/obsidian-advanced-markdown-export/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-advanced-markdown-export/total)](https://github.com/mnaoumov/obsidian-advanced-markdown-export/releases)
 
 Send someone a note and it arrives broken: the images are missing and every `[[link]]` is dead. Copying the whole folder over-shares, and copying just the `.md` under-shares. This plugin walks the note's dependencies for you and shows them as a tree of checkboxes, so you decide exactly what travels with it — then writes the bundle out with its links still working.
 
@@ -47,8 +47,8 @@ Send someone a note and it arrives broken: the images are missing and every `[[l
 
 A copy of the vault ships with every release. You can access it via any of the following:
 
-1. Running the **Export with Dependencies: Open demo vault** command.
-2. Downloading `export-with-dependencies-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-export-with-dependencies/releases).
+1. Running the **Advanced Markdown Export: Open demo vault** command.
+2. Downloading `advanced-markdown-export-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-advanced-markdown-export/releases).
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
 ## Installation
@@ -58,7 +58,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 To install the latest beta release of this plugin (regardless if it is available in [the official Community Plugins repository](https://community.obsidian.md) or not), follow these steps:
 
 1. Ensure you have the [BRAT plugin](https://community.obsidian.md/plugins/obsidian42-brat) installed and enabled.
-2. Click [Install via BRAT](https://intradeus.github.io/http-protocol-redirector?r=obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-export-with-dependencies).
+2. Click [Install via BRAT](https://intradeus.github.io/http-protocol-redirector?r=obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-advanced-markdown-export).
 3. An Obsidian pop-up window should appear. In the window, click the `Add plugin` button once and wait a few seconds for the plugin to install.
 
 ## Debugging
@@ -68,7 +68,7 @@ By default, debug messages for this plugin are hidden.
 To show them, run the following command:
 
 ```js
-window.DEBUG.enable('export-with-dependencies');
+window.DEBUG.enable('advanced-markdown-export');
 ```
 
 For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).

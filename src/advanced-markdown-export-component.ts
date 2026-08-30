@@ -11,7 +11,7 @@ import { TFolder } from 'obsidian';
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 import { isNote } from 'obsidian-dev-utils/obsidian/file-system';
 
-interface ExportWithDependenciesComponentConstructorParams {
+interface AdvancedMarkdownExportComponentConstructorParams {
   readonly app: App;
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
@@ -23,13 +23,13 @@ interface ExportWithDependenciesComponentConstructorParams {
  * export **roots** as a set — a single note, a multi-selection, and a folder are just different ways of
  * producing that set.
  */
-export class ExportWithDependenciesComponent extends ComponentEx {
+export class AdvancedMarkdownExportComponent extends ComponentEx {
   private readonly app: App;
   private readonly commandRegistrar: CommandRegistrar;
   private readonly menuEventRegistrar: MenuEventRegistrar;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
 
-  public constructor(params: ExportWithDependenciesComponentConstructorParams) {
+  public constructor(params: AdvancedMarkdownExportComponentConstructorParams) {
     super();
     this.app = params.app;
     this.commandRegistrar = params.commandRegistrar;

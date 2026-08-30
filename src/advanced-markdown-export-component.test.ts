@@ -27,11 +27,11 @@ import {
   vi
 } from 'vitest';
 
-import { ExportWithDependenciesComponent } from './export-with-dependencies-component.ts';
+import { AdvancedMarkdownExportComponent } from './advanced-markdown-export-component.ts';
 
 const MENU_ITEM_TITLE = 'Export with dependencies';
 
-describe('ExportWithDependenciesComponent', () => {
+describe('AdvancedMarkdownExportComponent', () => {
   let app: App;
   let commands: Command[];
   let fileMenuHandlers: FileMenuEventHandler[];
@@ -47,8 +47,8 @@ describe('ExportWithDependenciesComponent', () => {
     showNoticeMock = vi.fn<PluginNoticeComponent['showNotice']>();
   });
 
-  function createComponent(): ExportWithDependenciesComponent {
-    const component = new ExportWithDependenciesComponent({
+  function createComponent(): AdvancedMarkdownExportComponent {
+    const component = new AdvancedMarkdownExportComponent({
       app: app.asOriginalType__(),
       commandRegistrar: strictProxy<CommandRegistrar>({
         addCommand: (command: Command) => {

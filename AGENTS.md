@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Export with Dependencies exports a set of notes together with the files they depend on. The user picks what travels in a checkbox tree; the plugin writes the bundle out with its internal links still resolving.
+Advanced Markdown Export exports a set of notes together with the files they depend on. The user picks what travels in a checkbox tree; the plugin writes the bundle out with its internal links still resolving.
 
 ## Architecture
 

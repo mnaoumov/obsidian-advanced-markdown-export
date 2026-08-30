@@ -8,6 +8,6 @@
 # runtime). Nothing helper-related is committed; commit only the baked settings
 # file for the plugin under test.
 .obsidian/plugins/*
-!.obsidian/plugins/export-with-dependencies/
-.obsidian/plugins/export-with-dependencies/*
-!.obsidian/plugins/export-with-dependencies/data.json
+!.obsidian/plugins/advanced-markdown-export/
+.obsidian/plugins/advanced-markdown-export/*
+!.obsidian/plugins/advanced-markdown-export/data.json

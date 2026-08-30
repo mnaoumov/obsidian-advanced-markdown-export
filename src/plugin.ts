@@ -6,7 +6,7 @@ import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
-import { ExportWithDependenciesComponent } from './export-with-dependencies-component.ts';
+import { AdvancedMarkdownExportComponent } from './advanced-markdown-export-component.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
@@ -30,7 +30,7 @@ export class Plugin extends PluginBase {
     );
 
     this.addChild(
-      new ExportWithDependenciesComponent({
+      new AdvancedMarkdownExportComponent({
         app: this.app,
         commandRegistrar: new PluginCommandRegistrar(this),
         menuEventRegistrar: this.addChild(new MenuEventRegistrarComponent(this.app)),

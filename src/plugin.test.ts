@@ -13,7 +13,7 @@ import {
   vi
 } from 'vitest';
 
-import { ExportWithDependenciesComponent } from './export-with-dependencies-component.ts';
+import { AdvancedMarkdownExportComponent } from './advanced-markdown-export-component.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
@@ -73,9 +73,9 @@ vi.mock('./plugin-settings-tab.ts', () => ({
   PluginSettingsTab: vi.fn()
 }));
 
-vi.mock('./export-with-dependencies-component.ts', () => ({
+vi.mock('./advanced-markdown-export-component.ts', () => ({
   // eslint-disable-next-line prefer-arrow-callback, func-names -- mock must be constructable with `new` and return a real loadable Component.
-  ExportWithDependenciesComponent: vi.fn(function () {
+  AdvancedMarkdownExportComponent: vi.fn(function () {
     return new Component();
   })
 }));
@@ -127,7 +127,7 @@ describe('Plugin', () => {
     expect(PluginSettingsComponent).toHaveBeenCalledOnce();
     expect(PluginSettingsTab).toHaveBeenCalledOnce();
     expect(PluginSettingsTabComponent).toHaveBeenCalledOnce();
-    expect(ExportWithDependenciesComponent).toHaveBeenCalledOnce();
+    expect(AdvancedMarkdownExportComponent).toHaveBeenCalledOnce();
   });
 
   it('should register the open demo vault command handler', async () => {

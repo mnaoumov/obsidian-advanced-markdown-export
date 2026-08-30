@@ -2,7 +2,7 @@ import type { App } from 'obsidian';
 
 import { Notice } from 'obsidian';
 
-const PLUGIN_ID = 'export-with-dependencies';
+const PLUGIN_ID = 'advanced-markdown-export';
 
 /**
  * Runs one of the plugin's sample commands.
