@@ -1,0 +1,33 @@
+{
+  "version": "0.2",
+  "ignorePaths": [
+    "coverage",
+    "dist",
+    "node_modules",
+    "tsconfig.tsbuildinfo"
+  ],
+  "dictionaryDefinitions": [],
+  "dictionaries": [],
+  "words": [
+    "asar",
+    "dblclick",
+    "fflate",
+    "GHSA",
+    "Invocables",
+    "lezer",
+    "mnaoumov",
+    "Naumov",
+    "obsidianmd",
+    "offref",
+    "reimplementation",
+    "Seedable",
+    "subfolders",
+    "tsbuildinfo",
+    "unvalidated",
+    "wdio",
+    "wikilinks"
+  ],
+  "ignoreWords": [],
+  "import": [],
+  "enabled": true
+}

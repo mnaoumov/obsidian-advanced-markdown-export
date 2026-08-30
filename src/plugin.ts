@@ -1,0 +1,50 @@
+import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
+import { PluginCommandRegistrar } from 'obsidian-dev-utils/obsidian/command-registrar';
+import { MenuEventRegistrarComponent } from 'obsidian-dev-utils/obsidian/components/menu-event-registrar-component';
+import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
+import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
+import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+
+import { ExportWithDependenciesComponent } from './export-with-dependencies-component.ts';
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
+import { PluginSettingsTab } from './plugin-settings-tab.ts';
+
+export class Plugin extends PluginBase {
+  protected override async onloadImpl(): Promise<void> {
+    const pluginSettingsComponent = this.addChild(
+      new PluginSettingsComponent({
+        dataHandler: new PluginDataHandler(this),
+        pluginEventSource: new PluginEventSourceImpl(this)
+      })
+    );
+    this.pluginSettingsComponent = pluginSettingsComponent;
+    this.addChild(
+      new PluginSettingsTabComponent({
+        plugin: this,
+        pluginSettingsTab: new PluginSettingsTab({
+          plugin: this,
+          pluginSettingsComponent
+        })
+      })
+    );
+
+    this.addChild(
+      new ExportWithDependenciesComponent({
+        app: this.app,
+        commandRegistrar: new PluginCommandRegistrar(this),
+        menuEventRegistrar: this.addChild(new MenuEventRegistrarComponent(this.app)),
+        pluginNoticeComponent: this.pluginNoticeComponent
+      })
+    );
+
+    await this.commandHandlerComponent.registerCommandHandlers(() => [
+      new OpenDemoVaultCommandHandler({
+        app: this.app,
+        pluginId: this.manifest.id,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        pluginVersion: this.manifest.version
+      })
+    ]);
+  }
+}

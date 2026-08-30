@@ -1,0 +1,9 @@
+{
+  "author": "mnaoumov",
+  "authorUrl": "https://github.com/mnaoumov/",
+  "description": "Export notes with their attachments and linked notes, picked in a dependency tree.",
+  "id": "export-with-dependencies",
+  "isDesktopOnly": false,
+  "name": "Export with Dependencies",
+  "version": "0.0.0"
+}
