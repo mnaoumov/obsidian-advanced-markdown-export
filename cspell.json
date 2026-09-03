@@ -11,6 +11,7 @@
   "words": [
     "asar",
     "dblclick",
+    "ECONNRESET",
     "EOVERRIDE",
     "fflate",
     "GHSA",
@@ -18,6 +19,7 @@
     "lezer",
     "macrotask",
     "mnaoumov",
+    "multiinstance",
     "Naumov",
     "obsidianmd",
     "offref",

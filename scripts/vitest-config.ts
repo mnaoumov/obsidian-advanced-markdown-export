@@ -12,6 +12,42 @@ import { defineObsidianPluginVitestConfig } from 'obsidian-dev-utils/script-util
 const DEMO_VAULT_TEST_FILES = 'src/**/*.demo-vault.integration.test.ts';
 
 /**
+ * The store-listing frames of the export tree, desktop and mobile.
+ *
+ * Named `*.desktop-capture.` / `*.android-capture.` rather than `*.desktop.` / `*.android.` so they match
+ * NONE of the standard project globs: capturing is an explicit operation (`npm run capture:screenshots`),
+ * not something every test run does, and it opens a window and leaves a modal on screen to photograph it.
+ * Folded into the standard projects it would rewrite ten committed PNGs on every run.
+ */
+const DESKTOP_CAPTURE_TEST_FILES = 'src/**/*.desktop-capture.integration.test.ts';
+const ANDROID_CAPTURE_TEST_FILES = 'src/**/*.android-capture.integration.test.ts';
+
+/**
+ * The AVD the mobile frames are taken on: 900x1600 at density 320, which is exactly the size the community
+ * store asks for, so the capture needs no crop, no rescale and no letterbox.
+ *
+ * The shared `obsidian_test` AVD the integration suites drive is a Pixel 10 Pro XL at 1344x2992 and cannot
+ * produce it. Resizing it at runtime is not an option either: the display change recreates the activity,
+ * and with it the WebView the Appium session is attached to.
+ */
+const SCREENSHOT_AVD_NAME = 'obsidian_screenshots';
+
+const APPIUM_URL = 'http://localhost:4723';
+
+/**
+ * The screenshots AVD is cold-booted and rarely used, so Obsidian's first layout on it is far slower than
+ * on the well-warmed shared one; the 90s default expires while it is still starting up.
+ */
+const LAYOUT_READY_TIMEOUT_IN_MILLISECONDS = 240_000;
+
+/**
+ * A capture is a walk — open the modal, tick a row, wait for the subtree, settle, photograph — repeated
+ * once per frame, with a full-screen PNG crossing the transport each time. The standard projects' budgets
+ * cover a single assertion, not that.
+ */
+const CAPTURE_TIMEOUT_IN_MILLISECONDS = 600_000;
+
+/**
  * One `it` per note runs every button in that note, and each button re-opens the note, walks the
  * preview to find itself and then waits up to 15s for a result. A note with a dozen buttons therefore
  * blows well past the desktop project's 30s default — which fails the whole note with a bare vitest
@@ -22,6 +58,30 @@ const DEMO_VAULT_TIMEOUT_IN_MILLISECONDS = 600_000;
 export const config = defineObsidianPluginVitestConfig({
   customProjects(context: ObsidianPluginVitestConfigContext): TestProjectConfiguration[] {
     return [
+      {
+        test: {
+          ...context.android,
+          environmentOptions: {
+            obsidianTransport: {
+              appiumUrl: APPIUM_URL,
+              avdName: SCREENSHOT_AVD_NAME,
+              layoutReadyTimeoutInMilliseconds: LAYOUT_READY_TIMEOUT_IN_MILLISECONDS,
+              type: 'obsidian-android-appium'
+            }
+          },
+          include: [ANDROID_CAPTURE_TEST_FILES],
+          name: 'capture-screenshots:android',
+          testTimeout: CAPTURE_TIMEOUT_IN_MILLISECONDS
+        }
+      },
+      {
+        test: {
+          ...context.desktop,
+          include: [DESKTOP_CAPTURE_TEST_FILES],
+          name: 'capture-screenshots:desktop',
+          testTimeout: CAPTURE_TIMEOUT_IN_MILLISECONDS
+        }
+      },
       {
         test: {
           ...context.desktop,
