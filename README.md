@@ -30,6 +30,8 @@ Send someone a note and it arrives broken: the images are missing and every `[[l
 
 **The export has many roots.** Start from one note, from a multi-selection in the file explorer, or from a whole folder — every note in it becomes a root, and the tree becomes a forest.
 
+**A running total, before you commit to it.** The dialog keeps a live file count and total size above the tree, so "is this export getting huge?" is answered while you are still ticking rather than after the bundle is written.
+
 **Links that survive the trip.** The bundle keeps its vault-relative structure, so links between included files still resolve after extraction and two files with the same name cannot collide. Links to files you left out are handled by a policy you choose rather than silently breaking.
 
 ## Usage
@@ -38,6 +40,8 @@ Send someone a note and it arrives broken: the images are missing and every `[[l
 - Right-click a folder → every note in it becomes a root.
 - Select several files, right-click → **Export with dependencies**.
 - Command palette → **Export active note with its dependencies**.
+
+On the desktop, **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault. On mobile there is no such picker, so it goes to a vault-relative folder instead. Either way, turning on **Create a ZIP archive** gives you a single `.zip` rather than a folder.
 
 ## Demo vault
 
