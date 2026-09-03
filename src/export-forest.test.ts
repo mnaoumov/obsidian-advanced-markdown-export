@@ -26,7 +26,7 @@ import { PluginSettings } from './plugin-settings.ts';
 
 /*
  * Nothing is stubbed but the resolver call counter, and even that delegates to a real
- * {@link DependencyResolver} - so these tests walk a genuine link graph (G49).
+ * {@link DependencyResolver} - so these tests walk a genuine link graph.
  */
 describe('ExportForest', () => {
   let app: App;
