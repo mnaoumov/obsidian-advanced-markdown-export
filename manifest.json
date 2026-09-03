@@ -5,5 +5,6 @@
   "id": "advanced-markdown-export",
   "isDesktopOnly": false,
   "name": "Advanced Markdown Export",
-  "version": "0.0.0"
+  "version": "1.0.0",
+  "minAppVersion": "1.13.7"
 }

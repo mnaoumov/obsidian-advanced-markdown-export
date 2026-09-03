@@ -1,6 +1,6 @@
 {
   "name": "advanced-markdown-export",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Export notes with their attachments and linked notes, picked in a dependency tree.",
   "keywords": [],
   "homepage": "https://github.com/mnaoumov/obsidian-advanced-markdown-export#readme",
