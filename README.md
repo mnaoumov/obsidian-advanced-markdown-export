@@ -13,7 +13,7 @@ Send someone a note and it arrives broken: the images are missing and every `[[l
 A copy of the vault ships with every release. You can access it via any of the following:
 
 1. Running the **Advanced Markdown Export: Open demo vault** command.
-2. Downloading `advanced-markdown-export-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-advanced-markdown-export/releases).
+2. Downloading `advanced-markdown-export-demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-advanced-markdown-export/releases). It unzips into a single `advanced-markdown-export-demo-vault-<version>` folder.
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
 ## What makes it different
