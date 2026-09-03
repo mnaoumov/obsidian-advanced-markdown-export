@@ -221,9 +221,16 @@ async function runExportScenario(): Promise<ExportResult> {
         exportButton?.click();
 
         const exportedNotePath = `${exportFolderName}/A/Example/A.md`;
+
+        /*
+         * The completion notice, not the first file to land. `exportBundle` writes the chosen files one
+         * after another and the notice is shown only once it has resolved, so waiting on a single file
+         * lets the listing below race the ones still being written. That is exactly how this test used to
+         * lose `Example/B.md` - the last file of the three - on roughly one run in six.
+         */
         await waitUntil({
-          message: 'the bundle never appeared on disk',
-          predicate: () => app.vault.adapter.exists(exportedNotePath),
+          message: 'the export never reported that it had finished',
+          predicate: () => [...document.querySelectorAll('.notice')].some((noticeEl) => noticeEl.textContent.includes('Exported ')),
           timeoutInMilliseconds
         });
 
