@@ -4,6 +4,29 @@
 
 Send someone a note and it arrives broken: the images are missing and every `[[link]]` is dead. Copying the whole folder over-shares, and copying just the `.md` under-shares. This plugin walks the note's dependencies for you and shows them as a tree of checkboxes, so you decide exactly what travels with it — then writes the bundle out with its links still working.
 
+<!-- markdownlint-disable MD033 -->
+
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-desktop-1.png"><img src="images/screenshots/screenshot-desktop-1.png" alt="Attachments arrive checked, linked notes do not" width="600"></a>
+
+<details>
+<summary>More screenshots</summary>
+
+<div>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="Tick a linked note and it expands one level deeper" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-desktop-3.png"><img src="images/screenshots/screenshot-desktop-3.png" alt="Listed once, and mirrored wherever it repeats" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-desktop-4.png"><img src="images/screenshots/screenshot-desktop-4.png" alt="Export a folder and every note in it is a root" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-desktop-5.png"><img src="images/screenshots/screenshot-desktop-5.png" alt="Bulk selection, without ticking a hundred boxes" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Attachments arrive checked, linked notes do not" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="Tick a linked note and it expands one level deeper" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-3.png"><img src="images/screenshots/screenshot-mobile-3.png" alt="Listed once, and mirrored wherever it repeats" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-4.png"><img src="images/screenshots/screenshot-mobile-4.png" alt="Export a folder and every note in it is a root" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-5.png"><img src="images/screenshots/screenshot-mobile-5.png" alt="Bulk selection, without ticking a hundred boxes" width="270"></a>
+</div>
+
+</details>
+
+<!-- markdownlint-enable MD033 -->
+
 ## Demo vault
 
 **The documentation is a demo vault.** Every feature has a note that explains what it does, with a worked example graph you can export yourself.

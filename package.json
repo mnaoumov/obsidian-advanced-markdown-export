@@ -14,6 +14,7 @@
     "build": "jiti scripts/build.ts",
     "build:clean": "jiti scripts/build-clean.ts",
     "build:compile": "jiti scripts/build-compile.ts",
+    "capture:screenshots": "jiti scripts/capture-screenshots.ts",
     "commit": "jiti scripts/commit.ts",
     "dev": "jiti scripts/dev.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",
@@ -74,6 +75,7 @@
     "obsidian-test-mocks": "^5.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "sharp": "^0.35.4",
     "svelte": "^5.57.0",
     "type-fest": "^5.9.0",
     "vitest": "^4.1.11"
