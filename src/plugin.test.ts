@@ -27,7 +27,10 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
  */
 
 // The shared command handler component is now constructed and registered by PluginBase itself, so the mock exposes the registerCommandHandlers spy the base calls at load.
-const { registerCommandHandlers } = vi.hoisted(() => ({ registerCommandHandlers: vi.fn() }));
+const { registerCommandHandlers, settingsDouble } = vi.hoisted(() => ({
+  registerCommandHandlers: vi.fn(),
+  settingsDouble: {}
+}));
 
 vi.mock('obsidian-dev-utils/obsidian/command-handlers/command-handler-component', () => ({
   // eslint-disable-next-line prefer-arrow-callback, func-names -- mock must be constructable with `new` and return a loadable Component exposing registerCommandHandlers.
@@ -63,9 +66,9 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
 }));
 
 vi.mock('./plugin-settings-component.ts', () => ({
-  // eslint-disable-next-line prefer-arrow-callback, func-names -- mock must be constructable with `new` and return a real loadable Component.
+  // eslint-disable-next-line prefer-arrow-callback, func-names -- mock must be constructable with `new` and return a real loadable Component carrying the settings the plugin reads.
   PluginSettingsComponent: vi.fn(function () {
-    return new Component();
+    return Object.assign(new Component(), { settings: settingsDouble });
   })
 }));
 
@@ -128,6 +131,18 @@ describe('Plugin', () => {
     expect(PluginSettingsTab).toHaveBeenCalledOnce();
     expect(PluginSettingsTabComponent).toHaveBeenCalledOnce();
     expect(AdvancedMarkdownExportComponent).toHaveBeenCalledOnce();
+  });
+
+  /*
+   * The settings are read per export rather than captured at load, so changing one takes effect without
+   * reloading the plugin.
+   */
+  it('should hand the export component a live view of the settings', async () => {
+    const plugin = new Plugin(app.asOriginalType__(), manifest);
+    await plugin.onload();
+
+    const params = vi.mocked(AdvancedMarkdownExportComponent).mock.calls[0]?.[0];
+    expect(params?.settingsProvider()).toBe(settingsDouble);
   });
 
   it('should register the open demo vault command handler', async () => {

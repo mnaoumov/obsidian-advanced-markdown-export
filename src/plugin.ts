@@ -6,6 +6,8 @@ import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
+import type { ReadonlyPluginSettings } from './plugin-settings.ts';
+
 import { AdvancedMarkdownExportComponent } from './advanced-markdown-export-component.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
@@ -34,7 +36,9 @@ export class Plugin extends PluginBase {
         app: this.app,
         commandRegistrar: new PluginCommandRegistrar(this),
         menuEventRegistrar: this.addChild(new MenuEventRegistrarComponent(this.app)),
-        pluginNoticeComponent: this.pluginNoticeComponent
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        // Read per export rather than captured, so a settings change takes effect without a reload.
+        settingsProvider: (): ReadonlyPluginSettings => pluginSettingsComponent.settings
       })
     );
 

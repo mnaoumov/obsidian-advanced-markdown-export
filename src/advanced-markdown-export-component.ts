@@ -8,15 +8,38 @@ import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/componen
 import type { MenuEventRegistrar } from 'obsidian-dev-utils/obsidian/menu-event-registrar';
 
 import { TFolder } from 'obsidian';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
-import { isNote } from 'obsidian-dev-utils/obsidian/file-system';
+import {
+  isNote,
+  trimMarkdownExtension
+} from 'obsidian-dev-utils/obsidian/file-system';
+import { basename } from 'obsidian-dev-utils/path';
+
+import type { ReadonlyPluginSettings } from './plugin-settings.ts';
+
+import { DependencyResolver } from './dependency-resolver.ts';
+import { createExportDestination } from './export-destination/export-destination.ts';
+import { ExportForest } from './export-forest.ts';
+import { exportBundle } from './export-writer.ts';
+import { showExportTreeModal } from './modals/export-tree-modal.ts';
+
+/**
+ * A single root is the spec's worked example, and its immediate dependencies are what the user came to
+ * see - so that one gets opened for them. Any more than that and the tree stays closed, because a folder
+ * root can be thousands of notes and opening them all would resolve the whole vault up front.
+ */
+const MAX_ROOTS_TO_AUTO_EXPAND = 1;
 
 interface AdvancedMarkdownExportComponentConstructorParams {
   readonly app: App;
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly settingsProvider: SettingsProvider;
 }
+
+type SettingsProvider = () => ReadonlyPluginSettings;
 
 /**
  * Owns the plugin's entry points. Every one of them funnels into {@link startExport}, which takes the
@@ -28,6 +51,7 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
   private readonly commandRegistrar: CommandRegistrar;
   private readonly menuEventRegistrar: MenuEventRegistrar;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
+  private readonly settingsProvider: SettingsProvider;
 
   public constructor(params: AdvancedMarkdownExportComponentConstructorParams) {
     super();
@@ -35,6 +59,7 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
     this.commandRegistrar = params.commandRegistrar;
     this.menuEventRegistrar = params.menuEventRegistrar;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
+    this.settingsProvider = params.settingsProvider;
   }
 
   public override onload(): void {
@@ -103,6 +128,78 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
   }
 
   private startExport(roots: TAbstractFile[]): void {
-    this.pluginNoticeComponent.showNotice(`Export with dependencies: ${String(roots.length)} root(s) selected`);
+    invokeAsyncSafely(() => this.startExportAsync(roots));
   }
+
+  private async startExportAsync(roots: TAbstractFile[]): Promise<void> {
+    const settings = this.settingsProvider();
+    const forest = new ExportForest({
+      resolver: new DependencyResolver({
+        app: this.app,
+        settings
+      }),
+      roots,
+      settings
+    });
+    const rootIds = forest.getRootIds();
+
+    if (rootIds.length === 0) {
+      this.pluginNoticeComponent.showNotice('There is nothing to export here.');
+      return;
+    }
+
+    if (rootIds.length <= MAX_ROOTS_TO_AUTO_EXPAND) {
+      for (const rootId of rootIds) {
+        await forest.expand(rootId);
+      }
+    }
+
+    const files = await showExportTreeModal({
+      app: this.app,
+      forest
+    });
+
+    if (files === null) {
+      return;
+    }
+
+    const destination = await createExportDestination();
+    const resolvedTarget = await destination.resolveTarget({
+      app: this.app,
+      bundleName: getBundleName(roots),
+      settings
+    });
+
+    if (!resolvedTarget) {
+      return;
+    }
+
+    await exportBundle({
+      app: this.app,
+      files,
+      settings,
+      target: resolvedTarget.target
+    });
+    this.pluginNoticeComponent.showNotice(
+      `Exported ${String(files.length)} ${files.length === 1 ? 'file' : 'files'} to ${resolvedTarget.description}`
+    );
+  }
+}
+
+/**
+ * Names the bundle after what the user actually picked, so a single note or folder produces an obvious
+ * name and a mixed multi-selection falls back to a neutral one.
+ */
+function getBundleName(roots: readonly TAbstractFile[]): string {
+  const [firstRoot] = roots;
+
+  if (roots.length !== 1 || !firstRoot) {
+    return 'Export';
+  }
+
+  /*
+   * The basename, not the trimmed path: the user picked a directory, so a note nested three folders
+   * deep must still produce one bundle folder next to the others, not a chain of empty parents.
+   */
+  return firstRoot instanceof TFolder ? firstRoot.name : basename(trimMarkdownExtension(firstRoot));
 }

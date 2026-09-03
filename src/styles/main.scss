@@ -1,9 +1,88 @@
 /**
- * You can remove this file if you don't need any styles
  * See default library styles: https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/styles/main.scss
  * See available library css classes: https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/CssClass.ts
+ *
+ * The export tree is hand-built on Obsidian's own `tree-item` classes, so most of its look comes for
+ * free. What is below is only what the file explorer's tree does not already provide: the running total,
+ * the per-row checkbox and path, and the two states - a repeat and an unresolved link - that this tree
+ * has and the file explorer does not.
  */
 
-.advanced-markdown-export.obsidian-dev-utils {
-  /* Override library styles */
+.advanced-markdown-export-tree-modal {
+  --advanced-markdown-export-tree-max-height: 50vh;
+
+  .advanced-markdown-export-summary {
+    color: var(--text-normal);
+    font-weight: var(--font-medium);
+    padding: var(--size-4-2) 0;
+  }
+
+  .advanced-markdown-export-tree {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    max-height: var(--advanced-markdown-export-tree-max-height);
+    overflow-y: auto;
+    padding: var(--size-4-2);
+  }
+
+  .tree-item-self {
+    align-items: center;
+    display: flex;
+    gap: var(--size-4-1);
+  }
+
+  .advanced-markdown-export-checkbox {
+    flex-shrink: 0;
+    margin: 0;
+  }
+
+  /* Keeps the rows of a subtree aligned whether or not they can be expanded. */
+  .advanced-markdown-export-twisty-placeholder {
+    flex-shrink: 0;
+    width: var(--size-4-4);
+  }
+
+  .advanced-markdown-export-kind-icon {
+    align-items: center;
+    color: var(--text-muted);
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  .tree-item-inner {
+    align-items: baseline;
+    display: flex;
+    gap: var(--size-4-2);
+    min-width: 0;
+  }
+
+  .advanced-markdown-export-name {
+    white-space: nowrap;
+  }
+
+  .advanced-markdown-export-path {
+    color: var(--text-faint);
+    font-size: var(--font-smaller);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* An occurrence of a file that is already included above: shown, but not the live checkbox. */
+  .advanced-markdown-export-repeat {
+    cursor: pointer;
+    opacity: 0.6;
+  }
+
+  /* A link that points at nothing. There is no file to export, so it is greyed out rather than hidden. */
+  .advanced-markdown-export-unresolved {
+    color: var(--text-error);
+    opacity: 0.7;
+  }
+
+  /* Marks the owning row for a moment after a jump, so the eye can find where it landed. */
+  .advanced-markdown-export-flash {
+    background-color: var(--text-selection);
+    border-radius: var(--radius-s);
+  }
 }
