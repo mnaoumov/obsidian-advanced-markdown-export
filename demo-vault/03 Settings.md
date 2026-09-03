@@ -25,7 +25,7 @@ Open **Settings -> Community plugins -> Advanced Markdown Export**. Each option 
 ## What gets written
 
 - `outputFolderPath`
-  - where bundles are written. Leave it empty to be asked every time.
+  - the vault-relative folder bundles are written to **on mobile**, where there is no system directory picker. Leave it empty to be asked to name one each time. On the desktop it is not read at all: choosing Export opens a directory picker, so the bundle can land anywhere, including outside the vault.
 - `shouldCreateZip`
   - compress the bundle into a single `.zip` instead of writing a folder.
 - `danglingLinkAction`

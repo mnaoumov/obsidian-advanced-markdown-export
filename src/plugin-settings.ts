@@ -1,3 +1,12 @@
+import type { ReadonlyDeep } from 'type-fest';
+
+/**
+ * The settings as every consumer sees them. `PluginSettingsComponentBase.settings` hands out a deeply
+ * readonly view, so taking that type rather than the mutable class keeps a consumer from writing back
+ * into the live settings by accident.
+ */
+export type ReadonlyPluginSettings = ReadonlyDeep<PluginSettings>;
+
 /**
  * What to do with a link that points at a file the user chose NOT to export.
  */
