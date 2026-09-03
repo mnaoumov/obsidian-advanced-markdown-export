@@ -4,7 +4,6 @@ import type {
 } from '@obsidian-typings/obsidian-public-latest';
 
 import { unzipSync } from 'fflate';
-/* eslint-disable import-x/no-nodejs-modules -- Desktop-only destination; its test writes into a real temporary directory, which is the whole point of the module under test. */
 import {
   mkdtemp,
   readFile,
@@ -12,7 +11,6 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-/* eslint-enable import-x/no-nodejs-modules -- Desktop-only destination; its test writes into a real temporary directory, which is the whole point of the module under test. */
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {

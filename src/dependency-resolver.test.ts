@@ -18,10 +18,10 @@ import {
 import { PluginSettings } from './plugin-settings.ts';
 
 /*
- * Nothing is stubbed: the unit-test project loads `obsidian-test-mocks/obsidian-typings/vitest-setup`,
- * which bridges the `computeMetadataAsync` / `fileCache` / `metadataCache` members `getCacheSafe` reaches
- * for. So these tests run the real `getCacheSafe`, the real `getLinks` and the real link parsing over
- * genuine wikilinks and embeds, rather than over hand-built cache objects.
+ * Nothing is stubbed: the mocks the unit-test project sets up declare the `computeMetadataAsync` /
+ * `fileCache` / `metadataCache` members `getCacheSafe` reaches for under Obsidian's own internal names,
+ * so no bridging layer is involved. These tests run the real `getCacheSafe`, the real `getLinks` and the
+ * real link parsing over genuine wikilinks and embeds, rather than over hand-built cache objects.
  */
 describe('DependencyResolver', () => {
   let app: App;

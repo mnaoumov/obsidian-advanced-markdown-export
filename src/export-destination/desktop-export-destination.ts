@@ -1,4 +1,3 @@
-/* eslint-disable import-x/no-nodejs-modules -- Desktop-only destination; it is reached solely by the conditional import in `export-destination.ts`, gated on `Platform.isDesktopApp`, so these Node APIs never load on mobile. */
 import {
   mkdir,
   writeFile
@@ -7,7 +6,6 @@ import {
   dirname,
   join
 } from 'node:path';
-/* eslint-enable import-x/no-nodejs-modules -- Desktop-only destination; it is reached solely by the conditional import in `export-destination.ts`, gated on `Platform.isDesktopApp`, so these Node APIs never load on mobile. */
 import { noopAsync } from 'obsidian-dev-utils/function';
 
 import type { ExportTarget } from '../export-writer.ts';
