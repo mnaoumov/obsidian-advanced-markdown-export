@@ -10,12 +10,6 @@
     "that is actually present in the declared section; the script reports either mismatch. See rule G100."
   ],
   "pins": {
-    "@codemirror/language": {
-      "section": "devDependencies",
-      "why": "Must match the copy Obsidian bundles at runtime: Obsidian registers '@codemirror/language' in the module map it hands to plugins, so this copy is types-only and a newer pin would declare API the runtime lacks. Unlike @codemirror/state and @codemirror/view it is NOT named in obsidian's peerDependencies, so npm cannot detect or correct a mismatch. Settled 2026-08-05 by marker comparison: Obsidian carried 6.11.2 through 1.13.0 and bundles 6.12.3 from 1.13.1 onward, so 6.12.3 is what BOTH the latest public (1.13.4) and the latest catalyst (1.13.5) run.",
-      "check": null,
-      "manualCheck": "No mechanical check exists here: it would have to read a sibling obsidian-versions checkout, which this repo does not own (G37). Re-derive by marker comparison against the target version's obsidian.asar/app.js. The bundle embeds no version string, and Obsidian ships a PATCHED copy - it exports four names no published release has (ignoreSpellcheckToken, lineClassNodeProp, lineHighlighter, tokenClassNodeProp) - so an export-list comparison can never match a release exactly and only code markers can date it. Grep app.js for these, each introduced by a known release: 'maxBufferLength: 512' (6.11.3, was 2048), 'EnterBracketed' (6.12.1), '.paused' in the bracket-matching ViewPlugin (6.12.2), 'doc.length) return null' in matchBrackets (6.12.3), 'rangesToFold' in the fold state field (6.12.4). The newest marker present and the oldest marker absent bracket the version. Then run build:compile plus the editor-extension tests. Verified 2026-08-05 against 1.13.4 and 1.13.5: both 6.12.3."
-    },
     "@codemirror/state": {
       "section": "devDependencies",
       "why": "obsidian's peerDependencies names this exact version. A second copy in the tree means two CodeMirror state instances at runtime, so editor extensions would attach to the wrong one.",
