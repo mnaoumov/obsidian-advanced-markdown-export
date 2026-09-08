@@ -251,7 +251,7 @@ function checkedPaths(rows: TreeRow[]): string[] {
  */
 async function clickToolbarButton(buttonText: string): Promise<TreeRow[]> {
   return await evalInObsidian({
-    async callback({ buttonText: text, lib: { waitUntil }, waitTimeoutInMilliseconds }): Promise<TreeRow[]> {
+    async callback({ buttonText: text, lib: { clickElement, waitUntil }, waitTimeoutInMilliseconds }): Promise<TreeRow[]> {
       const SETTLE_DELAY_IN_MILLISECONDS = 900;
 
       const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
@@ -264,7 +264,7 @@ async function clickToolbarButton(buttonText: string): Promise<TreeRow[]> {
         throw new Error(`The toolbar has no ${text} button.`);
       }
 
-      button.click();
+      await clickElement({ element: button });
 
       await waitUntil({
         message: `the tree redrew after ${text}`,
@@ -326,7 +326,7 @@ async function openTreeFor(path: string): Promise<TreeRow[]> {
   return await evalInObsidian({
     async callback({
       app,
-      lib: { waitUntil },
+      lib: { pressKey, waitUntil },
       menuItemTitle,
       obsidianModule,
       rootPath,
@@ -336,14 +336,11 @@ async function openTreeFor(path: string): Promise<TreeRow[]> {
 
       /*
        * Each shot leaves its modal on screen - that is the point of the shot - so the next one has to put
-       * it away before opening its own. Dismissed by clicking the modal background: the harness's
-       * trusted-key helpers reach for Electron's `remote`, which Android has not got, and a dispatched
-       * KeyboardEvent is untrusted and ignored. A plain click is the one gesture that works here.
+       * it away before opening its own. Escape rather than a tap on the modal background: a trusted tap is
+       * hit-tested at the element's centre, and the background's centre is behind the modal, so the tap
+       * would land on the modal itself.
        */
-      const background = document.querySelector('.modal-bg');
-      if (background instanceof HTMLElement) {
-        background.click();
-      }
+      await pressKey({ key: 'Escape' });
 
       await waitUntil({
         message: 'no export tree left open',
