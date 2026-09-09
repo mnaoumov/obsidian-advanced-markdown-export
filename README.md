@@ -39,7 +39,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 2. Downloading `advanced-markdown-export-demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-advanced-markdown-export/releases). It unzips into a single `advanced-markdown-export-demo-vault-<version>` folder.
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
-## What makes it different
+## What it does
 
 **Attachments and linked notes are not the same thing, so they do not get the same default.** An embedded image is part of the note; a linked note is a separate document you may or may not want to hand over. So attachments arrive **checked** and linked notes arrive **unchecked**:
 
@@ -80,6 +80,8 @@ On the desktop, **Export** opens a system directory picker, so the bundle can la
 
 ## Installation
 
+The plugin is not yet listed in [the official Community Plugins repository](https://community.obsidian.md/plugins). Until it is, install it as a beta release.
+
 ### Beta versions
 
 To install the latest beta release of this plugin (regardless if it is available in [the official Community Plugins repository](https://community.obsidian.md) or not), follow these steps:
@@ -92,7 +94,7 @@ To install the latest beta release of this plugin (regardless if it is available
 
 By default, debug messages for this plugin are hidden.
 
-To show them, run the following command:
+To show them, run the following command in the `DevTools Console`:
 
 ```js
 window.DEBUG.enable('advanced-markdown-export');
