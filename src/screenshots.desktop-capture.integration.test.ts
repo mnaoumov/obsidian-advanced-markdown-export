@@ -13,6 +13,11 @@
  * The attachment bytes are read off `demo-vault/Example/Attachments/`, so the files in the pictures are
  * the files in the documentation rather than a second set that can drift from it.
  *
+ * The waiting happens in NODE: a single closure is capped at ~30s by the transport, so the 60s ceiling
+ * this file used to declare inside one - plus a settle on top of it - was a budget the cap could never
+ * honour, and would have died on exactly the slow machine the budget was for. The settles are Node-side
+ * sleeps now, a settle being wall-clock time either way.
+ *
  * Excluded from `npm run test:integration` by its file name - see the `capture-screenshots:desktop`
  * project in `scripts/vitest-config.ts`. Capturing is an explicit operation
  * (`npm run capture:screenshots`), not something every test run does: it opens a window and leaves a
@@ -28,10 +33,12 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
+import { setTimeout as sleepInNode } from 'node:timers/promises';
 import {
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
+  pollInObsidian,
   readPngDimensions
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
@@ -75,6 +82,12 @@ const HEIGHT_IN_PIXELS = 800;
 const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 const TEST_TIMEOUT_IN_MILLISECONDS = 300_000;
 
+const TREE_MODAL_SELECTOR = '.advanced-markdown-export-tree-modal';
+const TREE_PATH_SELECTOR = '.advanced-markdown-export-path';
+
+const THEME_SETTLE_DELAY_IN_MILLISECONDS = 1000;
+const TREE_SETTLE_DELAY_IN_MILLISECONDS = 900;
+
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
 const EXAMPLE_DIRECTORY = join(process.cwd(), 'demo-vault', 'Example');
 const ATTACHMENTS_DIRECTORY = join(EXAMPLE_DIRECTORY, 'Attachments');
@@ -102,10 +115,18 @@ beforeAll(async () => {
   });
   await vault.syncToDevice();
 
-  await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, noteAPath, waitTimeoutInMilliseconds }): Promise<void> {
-      const SETTLE_DELAY_IN_MILLISECONDS = 1000;
+  await pollInObsidian({
+    input: { noteAPath: NOTE_A_PATH },
+    poll({ app, noteAPath }): boolean {
+      const noteA = app.vault.getFileByPath(noteAPath);
+      if (!noteA) {
+        return false;
+      }
 
+      const cache = app.metadataCache.getFileCache(noteA);
+      return (cache?.embeds?.length ?? 0) > 0 && (cache?.links?.length ?? 0) > 0;
+    },
+    start({ app }): void {
       app.changeTheme('obsidian');
 
       // The modal is the subject, not the file explorer, so the sidebar is collapsed to give it the frame.
@@ -116,36 +137,27 @@ beforeAll(async () => {
       app.vault.setConfig('showInlineTitle', false);
       const inlineTitleApp: unknown = app;
       (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the fixture graph never reached the metadata cache',
+    until: (isCached: boolean): boolean => isCached,
+    vaultPath: vaultPath()
+  });
 
-      await waitUntil({
-        message: 'the fixture graph is in the metadata cache',
-        predicate: () => {
-          const noteA = app.vault.getFileByPath(noteAPath);
-          if (!noteA) {
-            return false;
-          }
-
-          const cache = app.metadataCache.getFileCache(noteA);
-          return (cache?.embeds?.length ?? 0) > 0 && (cache?.links?.length ?? 0) > 0;
-        },
-        timeoutInMilliseconds: waitTimeoutInMilliseconds
-      });
-
+  await evalInObsidian({
+    async callback({ app, noteAPath }): Promise<void> {
       // The root of the worked example sits behind the modal, so the frame is a vault rather than a
       // Dialog floating over an empty New tab.
       const noteA = app.vault.getFileByPath(noteAPath);
       if (noteA) {
         await app.workspace.getLeaf(false).openFile(noteA);
       }
-
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
     },
-    input: {
-      noteAPath: NOTE_A_PATH,
-      waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-    },
+    input: { noteAPath: NOTE_A_PATH },
     vaultPath: vaultPath()
   });
+
+  await sleepInNode(THEME_SETTLE_DELAY_IN_MILLISECONDS);
 }, TEST_TIMEOUT_IN_MILLISECONDS);
 
 describe('desktop frames of the export tree', () => {
@@ -235,11 +247,13 @@ function checkedPaths(rows: TreeRow[]): string[] {
  * @returns The rows the modal is showing afterwards.
  */
 async function clickToolbarButton(buttonText: string): Promise<TreeRow[]> {
-  return await evalInObsidian({
-    async callback({ buttonText: text, lib: { waitUntil }, waitTimeoutInMilliseconds }): Promise<TreeRow[]> {
-      const SETTLE_DELAY_IN_MILLISECONDS = 900;
-
-      const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
+  await pollInObsidian({
+    input: { buttonText, treeModalSelector: TREE_MODAL_SELECTOR, treePathSelector: TREE_PATH_SELECTOR },
+    poll({ treeModalSelector, treePathSelector }): number {
+      return document.querySelector(treeModalSelector)?.querySelectorAll(treePathSelector).length ?? 0;
+    },
+    start({ buttonText: text, treeModalSelector }): void {
+      const modalEl = document.querySelector(treeModalSelector);
       if (!modalEl) {
         throw new Error('No export tree modal is open.');
       }
@@ -250,38 +264,16 @@ async function clickToolbarButton(buttonText: string): Promise<TreeRow[]> {
       }
 
       button.click();
-
-      await waitUntil({
-        message: `the tree redrew after ${text}`,
-        predicate: () => modalEl.querySelectorAll('.advanced-markdown-export-path').length > 0,
-        timeoutInMilliseconds: waitTimeoutInMilliseconds
-      });
-
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
-
-      /**
-       * Reads the drawn rows out of the modal. Declared inside the callback because the callback is
-       * serialized into Obsidian and cannot reach anything in this module's scope.
-       *
-       * @param el - The modal element.
-       * @returns One entry per row, in the order they are drawn.
-       */
-      function readRows(el: Element): TreeRow[] {
-        return [...el.querySelectorAll('.tree-item-self')].map((rowEl) => ({
-          isChecked: rowEl.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox')?.checked ?? false,
-          isRepeat: rowEl.classList.contains('advanced-markdown-export-repeat'),
-          path: rowEl.querySelector('.advanced-markdown-export-path')?.textContent ?? ''
-        }));
-      }
-
-      return readRows(modalEl);
     },
-    input: {
-      buttonText,
-      waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: `the tree never redrew after ${buttonText}`,
+    until: (rowCount: number): boolean => rowCount > 0,
     vaultPath: vaultPath()
   });
+
+  await sleepInNode(TREE_SETTLE_DELAY_IN_MILLISECONDS);
+
+  return await readTreeRows();
 }
 
 /**
@@ -308,17 +300,12 @@ async function countOverlays(): Promise<Overlays> {
  * @returns The rows the modal is showing.
  */
 async function openTreeFor(path: string): Promise<TreeRow[]> {
-  return await evalInObsidian({
-    async callback({
-      app,
-      lib: { waitUntil },
-      menuItemTitle,
-      obsidianModule,
-      rootPath,
-      waitTimeoutInMilliseconds
-    }): Promise<TreeRow[]> {
-      const SETTLE_DELAY_IN_MILLISECONDS = 900;
-
+  await pollInObsidian({
+    input: { treeModalSelector: TREE_MODAL_SELECTOR },
+    poll({ treeModalSelector }): boolean {
+      return document.querySelector(treeModalSelector) === null;
+    },
+    start(): void {
       /*
        * Each shot leaves its modal on screen - that is the point of the shot - so the next one has to put
        * it away before opening its own. Dismissed by clicking the modal background rather than by pressing
@@ -329,13 +316,19 @@ async function openTreeFor(path: string): Promise<TreeRow[]> {
       if (background instanceof HTMLElement) {
         background.click();
       }
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'an export tree was left open',
+    until: (isClosed: boolean): boolean => isClosed,
+    vaultPath: vaultPath()
+  });
 
-      await waitUntil({
-        message: 'no export tree left open',
-        predicate: () => document.querySelector('.advanced-markdown-export-tree-modal') === null,
-        timeoutInMilliseconds: waitTimeoutInMilliseconds
-      });
-
+  await pollInObsidian({
+    input: { menuItemTitle: MENU_ITEM_TITLE, rootPath: path, treeModalSelector: TREE_MODAL_SELECTOR },
+    poll({ treeModalSelector }): boolean {
+      return document.querySelector(treeModalSelector) !== null;
+    },
+    start({ app, menuItemTitle, obsidianModule, rootPath }): void {
       const root = app.vault.getAbstractFileByPath(rootPath);
       if (!root) {
         throw new Error(`The vault has no ${rootPath}.`);
@@ -349,48 +342,54 @@ async function openTreeFor(path: string): Promise<TreeRow[]> {
       }
 
       menuItem.callback?.();
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the export tree never opened',
+    until: (isOpen: boolean): boolean => isOpen,
+    vaultPath: vaultPath()
+  });
 
-      await waitUntil({
-        message: 'the export tree is open',
-        predicate: () => document.querySelector('.advanced-markdown-export-tree-modal') !== null,
-        timeoutInMilliseconds: waitTimeoutInMilliseconds
-      });
+  await pollInObsidian({
+    input: { treeModalSelector: TREE_MODAL_SELECTOR, treePathSelector: TREE_PATH_SELECTOR },
+    poll({ treeModalSelector, treePathSelector }): number {
+      return document.querySelector(treeModalSelector)?.querySelectorAll(treePathSelector).length ?? 0;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the tree never drew its rows',
+    until: (rowCount: number): boolean => rowCount > 0,
+    vaultPath: vaultPath()
+  });
 
-      const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
+  await sleepInNode(TREE_SETTLE_DELAY_IN_MILLISECONDS);
+
+  return await readTreeRows();
+}
+
+/**
+ * Reads the rows the export tree is currently drawing.
+ *
+ * One closure, so the whole list is read from a single DOM state rather than across round trips. It is
+ * shared by the three callers that used to declare their own copy inside their own closure — a copy each
+ * because a serialized callback cannot reach this module's scope, which is still true of the inner
+ * function below.
+ *
+ * @returns One entry per row, in the order they are drawn.
+ */
+async function readTreeRows(): Promise<TreeRow[]> {
+  return await evalInObsidian({
+    callback({ treeModalSelector }): TreeRow[] {
+      const modalEl = document.querySelector(treeModalSelector);
       if (!modalEl) {
-        throw new Error('The export tree modal vanished after opening.');
+        throw new Error('No export tree modal is open.');
       }
 
-      await waitUntil({
-        message: 'the tree drew its rows',
-        predicate: () => modalEl.querySelectorAll('.advanced-markdown-export-path').length > 0,
-        timeoutInMilliseconds: waitTimeoutInMilliseconds
-      });
-
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
-
-      /**
-       * Reads the drawn rows out of the modal. Declared inside the callback because the callback is
-       * serialized into Obsidian and cannot reach anything in this module's scope.
-       *
-       * @param el - The modal element.
-       * @returns One entry per row, in the order they are drawn.
-       */
-      function readRows(el: Element): TreeRow[] {
-        return [...el.querySelectorAll('.tree-item-self')].map((rowEl) => ({
-          isChecked: rowEl.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox')?.checked ?? false,
-          isRepeat: rowEl.classList.contains('advanced-markdown-export-repeat'),
-          path: rowEl.querySelector('.advanced-markdown-export-path')?.textContent ?? ''
-        }));
-      }
-
-      return readRows(modalEl);
+      return [...modalEl.querySelectorAll('.tree-item-self')].map((rowEl) => ({
+        isChecked: rowEl.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox')?.checked ?? false,
+        isRepeat: rowEl.classList.contains('advanced-markdown-export-repeat'),
+        path: rowEl.querySelector('.advanced-markdown-export-path')?.textContent ?? ''
+      }));
     },
-    input: {
-      menuItemTitle: MENU_ITEM_TITLE,
-      rootPath: path,
-      waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-    },
+    input: { treeModalSelector: TREE_MODAL_SELECTOR },
     vaultPath: vaultPath()
   });
 }
@@ -442,19 +441,19 @@ async function shoot(index: number, caption: string): Promise<void> {
  * @returns The rows the modal is showing afterwards.
  */
 async function tickRow(path: string): Promise<TreeRow[]> {
-  return await evalInObsidian({
-    async callback({ lib: { waitUntil }, rowPath, waitTimeoutInMilliseconds }): Promise<TreeRow[]> {
-      const SETTLE_DELAY_IN_MILLISECONDS = 900;
-
-      const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
+  // The count is read and the box ticked in ONE closure: a round trip between them would let the tree
+  // Redraw against a stale baseline, and the poll below is the only thing that knows what it expanded past.
+  const rowCountBefore = await evalInObsidian({
+    callback({ rowPath, treeModalSelector, treePathSelector }): number {
+      const modalEl = document.querySelector(treeModalSelector);
       if (!modalEl) {
         throw new Error('No export tree modal is open.');
       }
 
-      const rowCountBefore = modalEl.querySelectorAll('.advanced-markdown-export-path').length;
+      const countBefore = modalEl.querySelectorAll(treePathSelector).length;
 
       const selfEl = [...modalEl.querySelectorAll('.tree-item-self')]
-        .find((candidate) => candidate.querySelector('.advanced-markdown-export-path')?.textContent === rowPath);
+        .find((candidate) => candidate.querySelector(treePathSelector)?.textContent === rowPath);
       const checkbox = selfEl?.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox');
       if (!checkbox) {
         throw new Error(`The tree has no live checkbox for ${rowPath}.`);
@@ -466,37 +465,27 @@ async function tickRow(path: string): Promise<TreeRow[]> {
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event('change'));
 
-      await waitUntil({
-        message: `${rowPath} expanded into its own dependencies`,
-        predicate: () => modalEl.querySelectorAll('.advanced-markdown-export-path').length > rowCountBefore,
-        timeoutInMilliseconds: waitTimeoutInMilliseconds
-      });
-
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
-
-      /**
-       * Reads the drawn rows out of the modal. Declared inside the callback because the callback is
-       * serialized into Obsidian and cannot reach anything in this module's scope.
-       *
-       * @param el - The modal element.
-       * @returns One entry per row, in the order they are drawn.
-       */
-      function readRows(el: Element): TreeRow[] {
-        return [...el.querySelectorAll('.tree-item-self')].map((rowEl) => ({
-          isChecked: rowEl.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox')?.checked ?? false,
-          isRepeat: rowEl.classList.contains('advanced-markdown-export-repeat'),
-          path: rowEl.querySelector('.advanced-markdown-export-path')?.textContent ?? ''
-        }));
-      }
-
-      return readRows(modalEl);
+      return countBefore;
     },
-    input: {
-      rowPath: path,
-      waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-    },
+    input: { rowPath: path, treeModalSelector: TREE_MODAL_SELECTOR, treePathSelector: TREE_PATH_SELECTOR },
     vaultPath: vaultPath()
   });
+
+  // `until` runs in Node, so it compares against the baseline the closure above returned.
+  await pollInObsidian({
+    input: { treeModalSelector: TREE_MODAL_SELECTOR, treePathSelector: TREE_PATH_SELECTOR },
+    poll({ treeModalSelector, treePathSelector }): number {
+      return document.querySelector(treeModalSelector)?.querySelectorAll(treePathSelector).length ?? 0;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: `${path} never expanded into its own dependencies`,
+    until: (rowCount: number): boolean => rowCount > rowCountBefore,
+    vaultPath: vaultPath()
+  });
+
+  await sleepInNode(TREE_SETTLE_DELAY_IN_MILLISECONDS);
+
+  return await readTreeRows();
 }
 
 /**
