@@ -460,8 +460,10 @@ async function tickRow(path: string): Promise<TreeRow[]> {
       }
 
       // A dispatched change rather than a trusted click, exactly as `export-flow.desktop.integration.test.ts`
-      // Drives the same checkbox: the harness's trusted-input helpers are Electron-only, and this suite's
-      // Mobile twin has to do what this one does.
+      // Drives the same checkbox: the box is ticked by ASSIGNMENT above, so the `change` is a notification
+      // Of a state that has already changed, not an untrusted event standing in for a gesture. The harness's
+      // Trusted helpers reach Android too since 12.0.0, so nothing here is waiting on that — and this
+      // Suite's mobile twin drives the tree the same way, which is what keeps the two frames comparable.
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event('change'));
 
