@@ -10,7 +10,7 @@
  *
  * The frame this set does NOT have is the mobile destination prompt, which would have been the one shot
  * with no desktop equivalent (there is no system directory picker on a phone). It cannot be taken: on a
- * device the export throws before the prompt opens, which is `T973-P46` and not this suite's to fix.
+ * device the export throws before the prompt opens, a defect in the export path and not this suite's to fix.
  *
  * There is no mobile equivalent of the desktop viewport override, so the capture is always the device's
  * own framebuffer - which is why this runs on the `obsidian_screenshots` AVD, built at exactly the
