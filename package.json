@@ -41,7 +41,6 @@
   "overrides": {
     "@codemirror/state": "$@codemirror/state",
     "@codemirror/view": "$@codemirror/view",
-    "@eslint/config-helpers": "^0.7.0",
     "@puppeteer/browsers": "^3.2.2",
     "@vitest/coverage-v8": "$@vitest/coverage-v8",
     "deepmerge-ts": "^8.0.2",
