@@ -11,6 +11,7 @@ import {
   Setting
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
+import { formatBytes } from 'obsidian-dev-utils/bytes';
 import { showModal } from 'obsidian-dev-utils/obsidian/modals/modal';
 import { basename } from 'obsidian-dev-utils/path';
 
@@ -20,7 +21,6 @@ import type {
 } from '../export-forest.ts';
 
 import { DependencyKind } from '../dependency-resolver.ts';
-import { formatBytes } from '../format-bytes.ts';
 
 /**
  * The parameters for {@link showExportTreeModal}.

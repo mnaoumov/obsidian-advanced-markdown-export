@@ -1,3 +1,4 @@
+import { toArrayBuffer } from 'obsidian-dev-utils/array-buffer';
 import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
 import { join } from 'obsidian-dev-utils/path';
 
@@ -9,7 +10,6 @@ import type {
 
 import { VaultFolderExportTarget } from '../export-targets/vault-folder-export-target.ts';
 import { ZipExportTarget } from '../export-targets/zip-export-target.ts';
-import { toArrayBuffer } from '../to-array-buffer.ts';
 
 type MobileExportDestinationResolveTargetParams = ResolveExportTargetParams;
 
