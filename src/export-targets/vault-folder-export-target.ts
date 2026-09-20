@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 
+import { toArrayBuffer } from 'obsidian-dev-utils/array-buffer';
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { getOrCreateFolder } from 'obsidian-dev-utils/obsidian/file-system';
 import {
@@ -8,8 +9,6 @@ import {
 } from 'obsidian-dev-utils/path';
 
 import type { ExportTarget } from '../export-writer.ts';
-
-import { toArrayBuffer } from '../to-array-buffer.ts';
 
 interface VaultFolderExportTargetConstructorParams {
   readonly app: App;
