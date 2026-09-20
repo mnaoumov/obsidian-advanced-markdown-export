@@ -1,4 +1,16 @@
-import { zipSync } from 'fflate';
+/*
+ * The `/browser` subpath is deliberate and load-bearing - never shorten it to plain `fflate`.
+ *
+ * `fflate`'s `exports['.']` map lists its `node` condition FIRST, and the plugin bundler runs esbuild with
+ * `platform: 'node'`, which puts `node` back into the active conditions even though `conditions: ['browser']`
+ * asks for the browser build. Bare `fflate` therefore bundles `esm/index.mjs`, whose first two lines are
+ * `import { createRequire } from 'module'` - so the module body throws `createRequire is not a function` the
+ * moment its body loads on a phone, taking the whole mobile export path down with it.
+ *
+ * The `/browser` subpath has no `node` condition to lose to, and nothing here needs the Node build:
+ * `zipSync` is synchronous and touches none of the `worker_threads` machinery that build exists to add.
+ */
+import { zipSync } from 'fflate/browser';
 import { noopAsync } from 'obsidian-dev-utils/function';
 
 import type { ExportTarget } from '../export-writer.ts';

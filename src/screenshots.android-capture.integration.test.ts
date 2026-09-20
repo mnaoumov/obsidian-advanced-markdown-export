@@ -9,8 +9,10 @@
  * button row - so the same five subjects photograph differently here.
  *
  * The frame this set does NOT have is the mobile destination prompt, which would have been the one shot
- * with no desktop equivalent (there is no system directory picker on a phone). It cannot be taken: on a
- * device the export throws before the prompt opens, a defect in the export path and not this suite's to fix.
+ * with no desktop equivalent (there is no system directory picker on a phone). It could not be taken,
+ * because on a device the export threw before the prompt opened - and that defect is now FIXED, so the
+ * frame is merely un-taken rather than impossible. `export-flow.android.integration.test.ts` drives that
+ * prompt open on a device and answers it; its sequence is the one to copy when this slot is filled.
  *
  * There is no mobile equivalent of the desktop viewport override, so the capture is always the device's
  * own framebuffer - which is why this runs on the `obsidian_screenshots` AVD, built at exactly the
