@@ -31,7 +31,24 @@ import {
 const MENU_ITEM_TITLE = 'Export with dependencies';
 const COMMAND_ID = 'advanced-markdown-export:export-active-file';
 const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
-const WAIT_TIMEOUT_IN_MILLISECONDS = 20_000;
+
+/*
+ * Under the transport's ~30s per-closure cap, not at it. The whole `evalInObsidian` callback is ONE
+ * script, and the transport abandons a script at 30s, so what a closure may declare is the SUM of its
+ * waits rather than any single ceiling. The export scenario waits four times, so the previous 20_000
+ * apiece declared 80s of patience no script could be granted - and a wait that outlives the cap cannot
+ * report what it was waiting for. It dies as a bare `script timeout`, naming neither the modal that never
+ * opened nor the export that never finished, so all four messages below were unreachable by construction.
+ *
+ * This file's budget is four waits and no settles, shared by the one closure that waits at all; the entry
+ * points scenario declares nothing. At 5000 apiece that is 20s, two thirds of the cap, leaving the rest
+ * for the closure's own work. It stays at that size because the waits are genuinely short rather than
+ * because the sum happens to fit: instrumented on a warm machine the whole closure ran in 184ms end to
+ * end - fixture build 15ms, metadata cache 57ms, modal open 51ms, root expansion inside one poll tick,
+ * export finished 56ms - so each ceiling is some ninety times the longest wait yet seen beneath it.
+ * Tightening it further is how a suite this quick starts failing honestly on a cold machine.
+ */
+const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
 /**
  * What the shadowed directory dialog answers with. Declared here rather than imported from
