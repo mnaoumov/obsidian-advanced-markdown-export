@@ -1,6 +1,10 @@
 import { toArrayBuffer } from 'obsidian-dev-utils/array-buffer';
+import { getOrCreateFolder } from 'obsidian-dev-utils/obsidian/file-system';
 import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
-import { join } from 'obsidian-dev-utils/path';
+import {
+  dirname,
+  join
+} from 'obsidian-dev-utils/path';
 
 import type {
   ExportDestination,
@@ -36,10 +40,26 @@ export class MobileExportDestination implements ExportDestination {
 
     if (params.settings.shouldCreateZip) {
       const archivePath = `${outputFolderPath}.zip`;
+      const archiveFolderPath = dirname(archivePath);
       return {
         description: archivePath,
         target: new ZipExportTarget({
           sink: async (archive: Uint8Array): Promise<void> => {
+            /*
+             * Create the archive's folder, as all three sibling write paths do. `Vault.createBinary`
+             * rejects when the parent is missing and `invokeAsyncSafely` swallows that rejection - so
+             * without this an **Output folder** naming a folder the vault has not got exports nothing at
+             * all, with no notice and no error on screen. Nothing validates that setting: it is free text.
+             *
+             * The guard is what the siblings do not need. `dirname` is `posix.dirname`, so a bundle at the
+             * vault root - what the prompt branch produces, since it asks for a name and not a path -
+             * answers `.`, and a leading slash typed into the setting answers `/`. Neither is a vault path
+             * to create, and the root is always there.
+             */
+            if (!isVaultRoot(archiveFolderPath)) {
+              await getOrCreateFolder(params.app, archiveFolderPath);
+            }
+
             await params.app.vault.createBinary(archivePath, toArrayBuffer(archive));
           }
         })
@@ -54,4 +74,14 @@ export class MobileExportDestination implements ExportDestination {
       })
     };
   }
+}
+
+/**
+ * Whether a folder path names the vault root, in either of the two spellings `dirname` can answer with.
+ *
+ * @param folderPath - The vault-relative folder path.
+ * @returns `true` when it is the root, which always exists and must never be created.
+ */
+function isVaultRoot(folderPath: string): boolean {
+  return folderPath === '.' || folderPath === '/';
 }

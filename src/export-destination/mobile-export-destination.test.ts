@@ -86,4 +86,35 @@ describe('MobileExportDestination', () => {
     const unzipped = unzipSync(new Uint8Array(await app.vault.readBinary(archive)));
     expect(Object.keys(unzipped)).toEqual(['A.md']);
   });
+
+  /*
+   * The **Output folder** setting is free text and nothing requires the folder to exist, so this is
+   * reachable from a value the settings tab accepts. It does NOT reproduce the symptom: the mock's
+   * `Vault.createBinary` writes straight through its adapter with no parent check, which is why the
+   * `Exports/A.zip` case above stayed green all the way through the defect. What it pins is the fix's
+   * observable effect - the folder is there afterwards. The rejection itself only happens on a device,
+   * where `src/export-flow.android.integration.test.ts` covers it.
+   */
+  it('should create the configured output folder when ZIP is on and the vault has not got it', async () => {
+    settings.outputFolderPath = 'Exports/Not/There';
+    settings.shouldCreateZip = true;
+    const resolved = await resolveTarget();
+    await resolved?.target.writeFile('A.md', new TextEncoder().encode('# A'));
+    await resolved?.target.finish();
+
+    expect(app.vault.getFolderByPath('Exports/Not/There')).not.toBeNull();
+    expect(app.vault.getFileByPath('Exports/Not/There/A.zip')).not.toBeNull();
+  });
+
+  // A bundle at the vault root has no folder to create, and the root must never be handed to `createFolder`.
+  it('should write an archive at the vault root when nothing is configured', async () => {
+    vi.mocked(prompt).mockResolvedValue('A');
+    settings.shouldCreateZip = true;
+    const resolved = await resolveTarget();
+    await resolved?.target.writeFile('A.md', new TextEncoder().encode('# A'));
+    await resolved?.target.finish();
+
+    expect(resolved?.description).toBe('A.zip');
+    expect(app.vault.getFileByPath('A.zip')).not.toBeNull();
+  });
 });

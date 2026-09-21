@@ -201,6 +201,41 @@ describe('Export flow on Android', () => {
       await removeFromVault([archivePath]);
     }
   }, TEST_TIMEOUT_IN_MILLISECONDS);
+
+  /*
+   * The second, independent way the mobile export could do nothing at all. The two cases above answer the
+   * destination prompt with a ROOT-LEVEL name, deliberately, so the archive's parent is the vault root and
+   * always exists - which is why they exercise the compressor rather than this. Point **Output folder** at
+   * a folder the vault has not got, and before the fix `Vault.createBinary` rejected on the missing
+   * parent, `invokeAsyncSafely` ate the rejection, and the tree closed with no notice and no error: the
+   * exact symptom of the fflate defect, from a different cause.
+   *
+   * It has to run here rather than in the unit suite: `obsidian-test-mocks`' `Vault.createBinary` writes
+   * straight through its adapter with no parent check, so the rejection only happens on a device.
+   */
+  it('should create a configured output folder the vault has not got', async () => {
+    const outputFolderPath = `export-mobile-missing-${stamp()}`;
+    const bundleName = 'A';
+    const archivePath = `${outputFolderPath}/${bundleName}.zip`;
+
+    try {
+      await setSettings({ outputFolderPath, shouldCreateZip: true });
+      await openExportTree();
+      await pressExport();
+
+      /*
+       * No prompt this time - a configured output folder is the branch that does not ask - so the notice
+       * is the first thing to wait for, and its timing out IS this regression.
+       */
+      expect(await waitForExportDestination()).toBe(archivePath);
+
+      const archive = unzipSync(await readVaultBinary(archivePath));
+      expect(sorted(Object.keys(archive))).toStrictEqual(sorted(EXPECTED_BUNDLE_PATHS));
+    } finally {
+      await setSettings({ outputFolderPath: '', shouldCreateZip: false });
+      await removeFromVault([outputFolderPath]);
+    }
+  }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
 
 /**
@@ -247,10 +282,37 @@ async function answerPrompt(destinationPath: string): Promise<void> {
 }
 
 /**
+ * Dismisses any completion notice an earlier case left on screen, and waits for the last of them to go.
+ *
+ * `waitForExportDestination` reads the FIRST `Exported ` notice it finds, so a notice still up from the
+ * previous case is read as this case's answer - which is a stale destination path, and the wrong failure
+ * to have to diagnose. Clearing them is cheaper and surer than assuming Obsidian's auto-hide has run,
+ * which is a race whose length depends on how fast the round trips before it happened to be.
+ */
+async function dismissNotices(): Promise<void> {
+  await pollInObsidian({
+    poll(): number {
+      return document.querySelectorAll('.notice').length;
+    },
+    async start({ lib: { clickElement } }): Promise<void> {
+      // A notice hides itself when clicked, which is the only dismissal an Obsidian notice offers.
+      for (const noticeEl of document.querySelectorAll<HTMLElement>('.notice')) {
+        await clickElement({ element: noticeEl });
+      }
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'a notice left on screen by an earlier case never went away',
+    until: (noticeCount: number): boolean => noticeCount === 0,
+    vaultPath: vaultPath()
+  });
+}
+
+/**
  * Opens the export tree on the fixture note from the file-explorer context menu, and waits for its rows.
  *
- * Anything left on screen by an earlier case is dismissed on the way in, so one case cannot strand the
- * next behind a dialog it knows nothing about.
+ * Anything left on screen by an earlier case is dismissed on the way in - a modal here, a notice in
+ * `dismissNotices` - so one case cannot strand the next behind a dialog it knows nothing about, nor hand
+ * it an answer that belongs to the case before.
  */
 async function openExportTree(): Promise<void> {
   await pollInObsidian({
@@ -265,6 +327,8 @@ async function openExportTree(): Promise<void> {
     until: (modalCount: number): boolean => modalCount === 0,
     vaultPath: vaultPath()
   });
+
+  await dismissNotices();
 
   await pollInObsidian({
     input: {
