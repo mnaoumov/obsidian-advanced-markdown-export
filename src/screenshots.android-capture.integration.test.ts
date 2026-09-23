@@ -4,15 +4,15 @@
  * Produces the mobile frames of the export tree, driving it in Obsidian Mobile on a real Android emulator
  * and writing `images/screenshots/screenshot-mobile-N.png`.
  *
- * They are not the desktop frames at half the width. The tree is the WHOLE screen on a phone, its rows
- * carry the full vault path on one line, and the `Selection` toolbar renders as five pills rather than a
- * button row - so the same five subjects photograph differently here.
+ * They are not the desktop frames at half the width. The tree is the WHOLE screen on a phone and its rows
+ * carry the full vault path on one line, so the four subjects the two sets share photograph differently
+ * here.
  *
- * The frame this set does NOT have is the mobile destination prompt, which would have been the one shot
- * with no desktop equivalent (there is no system directory picker on a phone). It could not be taken,
- * because on a device the export threw before the prompt opened - and that defect is now FIXED, so the
- * frame is merely un-taken rather than impossible. `export-flow.android.integration.test.ts` drives that
- * prompt open on a device and answers it; its sequence is the one to copy when this slot is filled.
+ * The fifth is not shared at all: it is the `Where should the export go?` prompt, the one screen with no
+ * desktop equivalent, since a phone has no system directory picker and the desktop build hands that job to
+ * the OS. It used to be un-takeable - on a device the export threw inside `createExportDestination` before
+ * the prompt opened, so the slot mirrored the desktop toolbar frame instead - and the sequence that opens
+ * it here is the one `export-flow.android.integration.test.ts` proved when that defect was fixed.
  *
  * There is no mobile equivalent of the desktop viewport override, so the capture is always the device's
  * own framebuffer - which is why this runs on the `obsidian_screenshots` AVD, built at exactly the
@@ -80,6 +80,14 @@ interface Overlays {
 }
 
 /**
+ * The destination prompt, reduced to what a caption can be checked against.
+ */
+interface Prompt {
+  readonly title: string;
+  readonly value: string;
+}
+
+/**
  * One row of the tree, reduced to what a caption can be checked against.
  */
 interface TreeRow {
@@ -89,6 +97,13 @@ interface TreeRow {
 }
 
 const MENU_ITEM_TITLE = 'Export with dependencies';
+const PLUGIN_ID = 'advanced-markdown-export';
+
+/**
+ * The heading the destination prompt is captioned against. The band lands on the modal's FOOTER, so the
+ * caption has to be provable by something further up - and this is it.
+ */
+const PROMPT_TITLE = 'Where should the export go?';
 
 const WIDTH_IN_PIXELS = 900;
 const HEIGHT_IN_PIXELS = 1600;
@@ -105,8 +120,21 @@ const TEST_TIMEOUT_IN_MILLISECONDS = 600_000;
 const TREE_MODAL_SELECTOR = '.advanced-markdown-export-tree-modal';
 const TREE_PATH_SELECTOR = '.advanced-markdown-export-path';
 
+/**
+ * The destination prompt is `obsidian-dev-utils`' shared one, so its own class is generic; the plugin id is
+ * on the same element because the library scopes every modal it opens to the plugin that opened it.
+ */
+const PROMPT_MODAL_SELECTOR = `.prompt-modal.${PLUGIN_ID}`;
+
 const THEME_SETTLE_DELAY_IN_MILLISECONDS = 1000;
 const TREE_SETTLE_DELAY_IN_MILLISECONDS = 900;
+
+/**
+ * The prompt's open animation, which is still running at the moment its element first answers a selector.
+ * The text box is focused on open but the soft keyboard stays down - a programmatic `focus()` does not
+ * raise one in a WebView - so this waits for the modal to finish sliding in and nothing else.
+ */
+const PROMPT_SETTLE_DELAY_IN_MILLISECONDS = 900;
 
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
 const EXAMPLE_DIRECTORY = join(process.cwd(), 'demo-vault', 'Example');
@@ -237,15 +265,21 @@ describe('mobile frames of the export tree', () => {
     await shoot(4, 'Export a folder and every note in it is a root');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 
-  it('5 - the selection toolbar at phone width', async () => {
-    await clickToolbarButton('Expand all');
-    const rows = await clickToolbarButton('Check attachments');
+  it('5 - the destination prompt, which the desktop set cannot have', async () => {
+    await openTreeFor(NOTE_A_PATH);
+    await pressExport();
+    const prompt = await waitForPrompt();
 
-    // `Expand all` is what puts the attachments on screen for `Check attachments` to tick.
-    expect(checkedPaths(rows)).toContain(ATTACHMENT_A1_PATH);
-    expect(checkedPaths(rows)).toContain(ATTACHMENT_B3_PATH);
+    /*
+     * Both halves are what the caption claims. The title is the question, and it is what the caption is
+     * checked against rather than the footer the band is drawn over. The value is the bundle's own name,
+     * defaulted from the root the export started at - so the frame shows a prompt a user could simply
+     * accept, which is the whole reason it is worth a slot.
+     */
+    expect(prompt.title).toBe(PROMPT_TITLE);
+    expect(prompt.value).toBe('A');
 
-    await shoot(5, 'Bulk selection, without ticking a hundred boxes');
+    await shoot(5, 'No folder picker on a phone, so it asks');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
 
@@ -257,42 +291,6 @@ describe('mobile frames of the export tree', () => {
  */
 function checkedPaths(rows: TreeRow[]): string[] {
   return rows.filter((row) => row.isChecked).map((row) => row.path);
-}
-
-/**
- * Presses one of the toolbar's buttons and leaves the result on screen.
- *
- * @param buttonText - The button's label.
- * @returns The rows the modal is showing afterwards.
- */
-async function clickToolbarButton(buttonText: string): Promise<TreeRow[]> {
-  await pollInObsidian({
-    input: { buttonText, treeModalSelector: TREE_MODAL_SELECTOR, treePathSelector: TREE_PATH_SELECTOR },
-    poll({ treeModalSelector, treePathSelector }): number {
-      return document.querySelector(treeModalSelector)?.querySelectorAll(treePathSelector).length ?? 0;
-    },
-    async start({ buttonText: text, lib: { clickElement }, treeModalSelector }): Promise<void> {
-      const modalEl = document.querySelector(treeModalSelector);
-      if (!modalEl) {
-        throw new Error('No export tree modal is open.');
-      }
-
-      const button = [...modalEl.querySelectorAll('button')].find((candidate) => candidate.textContent === text);
-      if (!button) {
-        throw new Error(`The toolbar has no ${text} button.`);
-      }
-
-      await clickElement({ element: button });
-    },
-    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
-    timeoutMessage: `the tree never redrew after ${buttonText}`,
-    until: (rowCount: number): boolean => rowCount > 0,
-    vaultPath: vaultPath()
-  });
-
-  await sleepInNode(TREE_SETTLE_DELAY_IN_MILLISECONDS);
-
-  return await readTreeRows();
 }
 
 /**
@@ -382,6 +380,39 @@ async function openTreeFor(path: string): Promise<TreeRow[]> {
 }
 
 /**
+ * Accepts the open export tree with its default ticks, and waits for it to close.
+ *
+ * The tree closing is not the prompt opening: `createExportDestination` is reached by a conditional
+ * `await import()`, so the two are separated by however long that module takes to load on a cold phone.
+ * Waiting for them one at a time is what says which of the two failed when one of them does.
+ */
+async function pressExport(): Promise<void> {
+  await pollInObsidian({
+    input: { treeModalSelector: TREE_MODAL_SELECTOR },
+    poll({ treeModalSelector }): boolean {
+      return document.querySelector(treeModalSelector) === null;
+    },
+    async start({ lib: { clickElement }, treeModalSelector }): Promise<void> {
+      const modalEl = document.querySelector(treeModalSelector);
+      if (!modalEl) {
+        throw new Error('No export tree modal is open.');
+      }
+
+      const exportButtonEl = [...modalEl.querySelectorAll('button')].find((button) => button.textContent === 'Export');
+      if (!exportButtonEl) {
+        throw new Error('The export tree has no Export button.');
+      }
+
+      await clickElement({ element: exportButtonEl });
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the export tree never closed after Export',
+    until: (isClosed: boolean): boolean => isClosed,
+    vaultPath: vaultPath()
+  });
+}
+
+/**
  * Reads the rows the export tree is currently drawing.
  *
  * One closure, so the whole list is read from a single DOM state rather than across round trips. It is
@@ -418,8 +449,9 @@ async function readTreeRows(): Promise<TreeRow[]> {
  */
 async function shoot(index: number, caption: string): Promise<void> {
   /*
-   * Exactly one modal and no notice, always. Every frame here deliberately leaves its modal on screen and
-   * the next shot dismisses it on the way in, so the ways this goes wrong are a stray SECOND modal landing
+   * Exactly one modal and no notice, always - the tree for the first four frames, the destination prompt
+   * for the fifth. Every frame here deliberately leaves its modal on screen and the next shot dismisses it
+   * on the way in, so the ways this goes wrong are a stray SECOND modal landing
    * in the frame, the intended one having closed before the shutter, and a notice band settling on top of
    * whatever is being photographed. None of them fails any assertion above - they just produce a picture
    * of the wrong thing, which is the one defect a capture suite cannot afford to ship silently. The notice
@@ -508,4 +540,45 @@ async function tickRow(path: string): Promise<TreeRow[]> {
  */
 function vaultPath(): string {
   return getTemporaryVault().path;
+}
+
+/**
+ * Waits for the destination prompt to open, settles it, and reads what it is showing.
+ *
+ * @returns Its title and the name it defaulted to.
+ */
+async function waitForPrompt(): Promise<Prompt> {
+  await pollInObsidian({
+    input: { promptModalSelector: PROMPT_MODAL_SELECTOR },
+    poll({ promptModalSelector }): boolean {
+      return document.querySelector(promptModalSelector) !== null;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the destination prompt never opened',
+    until: (isOpen: boolean): boolean => isOpen,
+    vaultPath: vaultPath()
+  });
+
+  await sleepInNode(PROMPT_SETTLE_DELAY_IN_MILLISECONDS);
+
+  return await evalInObsidian({
+    callback({ promptModalSelector }): Prompt {
+      const modalEl = document.querySelector(promptModalSelector);
+      if (!modalEl) {
+        throw new Error('The destination prompt is not open.');
+      }
+
+      const inputEl = modalEl.querySelector<HTMLInputElement>('input');
+      if (!inputEl) {
+        throw new Error('The destination prompt has no text box.');
+      }
+
+      return {
+        title: modalEl.querySelector('.modal-title')?.textContent ?? '',
+        value: inputEl.value
+      };
+    },
+    input: { promptModalSelector: PROMPT_MODAL_SELECTOR },
+    vaultPath: vaultPath()
+  });
 }

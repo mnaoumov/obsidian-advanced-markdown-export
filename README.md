@@ -20,7 +20,7 @@ Send someone a note and it arrives broken: the images are missing and every `[[l
 <a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="Tick a linked note and it expands one level deeper" width="270"></a>
 <a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-3.png"><img src="images/screenshots/screenshot-mobile-3.png" alt="Listed once, and mirrored wherever it repeats" width="270"></a>
 <a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-4.png"><img src="images/screenshots/screenshot-mobile-4.png" alt="Export a folder and every note in it is a root" width="270"></a>
-<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-5.png"><img src="images/screenshots/screenshot-mobile-5.png" alt="Bulk selection, without ticking a hundred boxes" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-advanced-markdown-export/blob/HEAD/images/screenshots/screenshot-mobile-5.png"><img src="images/screenshots/screenshot-mobile-5.png" alt="No folder picker on a phone, so it asks" width="270"></a>
 </div>
 
 </details>
