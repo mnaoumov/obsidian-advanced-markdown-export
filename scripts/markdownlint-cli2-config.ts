@@ -11,6 +11,10 @@ import { obsidianDevUtilsConfig } from 'obsidian-dev-utils/script-utils/linters/
  */
 export const config: MarkdownlintCli2ConfigurationSchema = {
   ...obsidianDevUtilsConfig,
+  config: {
+    ...obsidianDevUtilsConfig.config,
+    'no-soft-break-in-paragraph': true
+  },
   ignores: [
     ...obsidianDevUtilsConfig.ignores ?? [],
     'demo-vault/Example/**'
