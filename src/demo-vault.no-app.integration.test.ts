@@ -3,13 +3,13 @@ import { registerDemoVaultCoverageSuite } from 'obsidian-dev-utils/script-utils/
 import { getRootFolder } from 'obsidian-dev-utils/script-utils/root';
 
 // Keeps the in-repo `demo-vault/` in sync with the plugin's public surface WITHOUT
-// Launching Obsidian: it reflects the real config from source and asserts every
-// Setting is documented in a note, and that the guard note/member still exist
+// launching Obsidian: it reflects the real config from source and asserts every
+// setting is documented in a note, and that the guard note/member still exist
 // (rename drift).
 //
 // The `Example/` notes are the fixture graph the plugin is demonstrated ON, not lessons about it, so
-// They sit outside the authoring checks - they deliberately carry wikilinks and no explanatory prose,
-// Because that is what makes them a realistic thing to export.
+// they sit outside the authoring checks - they deliberately carry wikilinks and no explanatory prose,
+// because that is what makes them a realistic thing to export.
 registerDemoVaultCoverageSuite({
   authoring: {
     excludedNotes: [

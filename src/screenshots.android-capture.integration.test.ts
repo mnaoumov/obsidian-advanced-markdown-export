@@ -192,7 +192,7 @@ beforeAll(async () => {
       (fontApp as FontSizeApp).updateFontSize();
 
       // The example note's own `# A` heading already titles it, so Obsidian's inline title renders the
-      // Name twice.
+      // name twice.
       app.vault.setConfig('showInlineTitle', false);
       const inlineTitleApp: unknown = app;
       (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
@@ -206,7 +206,7 @@ beforeAll(async () => {
   await evalInObsidian({
     async callback({ app, noteAPath }): Promise<void> {
       // The root of the worked example sits behind the modal, so the frame is a vault rather than a
-      // Dialog floating over an empty New tab.
+      // dialog floating over an empty New tab.
       const noteA = app.vault.getFileByPath(noteAPath);
       if (noteA) {
         await app.workspace.getLeaf(false).openFile(noteA);
@@ -475,7 +475,7 @@ async function shoot(index: number, caption: string): Promise<void> {
   });
 
   // Captioned AFTER capture, so the frame stays an untouched device screenshot and rewording a label
-  // Needs no re-shoot.
+  // needs no re-shoot.
   const labeled = await labelScreenshot(captured, { text: caption });
 
   mkdirSync(IMAGES_DIRECTORY, { recursive: true });
@@ -490,7 +490,7 @@ async function shoot(index: number, caption: string): Promise<void> {
  */
 async function tickRow(path: string): Promise<TreeRow[]> {
   // The count is read and the box ticked in ONE closure: a round trip between them would let the tree
-  // Redraw against a stale baseline, and the poll below is the only thing that knows what it expanded past.
+  // redraw against a stale baseline, and the poll below is the only thing that knows what it expanded past.
   const rowCountBefore = await evalInObsidian({
     callback({ rowPath, treeModalSelector, treePathSelector }): number {
       const modalEl = document.querySelector(treeModalSelector);

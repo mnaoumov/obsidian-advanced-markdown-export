@@ -133,7 +133,7 @@ beforeAll(async () => {
       app.workspace.leftSplit.collapse();
 
       // The example note's own `# A` heading already titles it, so Obsidian's inline title renders the
-      // Name twice. Setting the config alone changes nothing on screen; the applier is what re-renders.
+      // name twice. Setting the config alone changes nothing on screen; the applier is what re-renders.
       app.vault.setConfig('showInlineTitle', false);
       const inlineTitleApp: unknown = app;
       (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
@@ -147,7 +147,7 @@ beforeAll(async () => {
   await evalInObsidian({
     async callback({ app, noteAPath }): Promise<void> {
       // The root of the worked example sits behind the modal, so the frame is a vault rather than a
-      // Dialog floating over an empty New tab.
+      // dialog floating over an empty New tab.
       const noteA = app.vault.getFileByPath(noteAPath);
       if (noteA) {
         await app.workspace.getLeaf(false).openFile(noteA);
@@ -442,7 +442,7 @@ async function shoot(index: number, caption: string): Promise<void> {
  */
 async function tickRow(path: string): Promise<TreeRow[]> {
   // The count is read and the box ticked in ONE closure: a round trip between them would let the tree
-  // Redraw against a stale baseline, and the poll below is the only thing that knows what it expanded past.
+  // redraw against a stale baseline, and the poll below is the only thing that knows what it expanded past.
   const rowCountBefore = await evalInObsidian({
     callback({ rowPath, treeModalSelector, treePathSelector }): number {
       const modalEl = document.querySelector(treeModalSelector);
@@ -460,10 +460,10 @@ async function tickRow(path: string): Promise<TreeRow[]> {
       }
 
       // A dispatched change rather than a trusted click, exactly as `export-flow.desktop.integration.test.ts`
-      // Drives the same checkbox: the box is ticked by ASSIGNMENT above, so the `change` is a notification
-      // Of a state that has already changed, not an untrusted event standing in for a gesture. The harness's
-      // Trusted helpers reach Android too since 12.0.0, so nothing here is waiting on that — and this
-      // Suite's mobile twin drives the tree the same way, which is what keeps the two frames comparable.
+      // drives the same checkbox: the box is ticked by ASSIGNMENT above, so the `change` is a notification
+      // of a state that has already changed, not an untrusted event standing in for a gesture. The harness's
+      // trusted helpers reach Android too since 12.0.0, so nothing here is waiting on that — and this
+      // suite's mobile twin drives the tree the same way, which is what keeps the two frames comparable.
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event('change'));
 
