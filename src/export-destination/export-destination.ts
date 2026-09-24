@@ -15,7 +15,7 @@ export interface ExportDestination {
    * @param params - The parameters for the destination.
    * @returns The resolved target, or `null` when the user backed out.
    */
-  resolveTarget(params: ResolveExportTargetParams): Promise<null | ResolvedExportTarget>;
+  resolveTarget: (params: ResolveExportTargetParams) => Promise<null | ResolvedExportTarget>;
 }
 
 /**

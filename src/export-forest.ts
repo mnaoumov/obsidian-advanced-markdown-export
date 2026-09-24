@@ -226,11 +226,7 @@ export class ExportForest {
 
     node.isExpanded = true;
 
-    if (node.isResolved || !node.file || node.kind === DependencyKind.Attachment) {
-      return;
-    }
-
-    if (node.depth >= this.settings.maxTraversalDepth) {
+    if (node.isResolved || !node.file || node.kind === DependencyKind.Attachment || (node.depth >= this.settings.maxTraversalDepth)) {
       return;
     }
 

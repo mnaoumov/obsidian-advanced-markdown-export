@@ -51,7 +51,7 @@ export interface ExportTarget {
    *
    * @returns A {@link Promise} that resolves when the bundle is complete.
    */
-  finish(): Promise<void>;
+  finish: () => Promise<void>;
 
   /**
    * Writes one file into the bundle.
@@ -60,7 +60,7 @@ export interface ExportTarget {
    * @param data - The file's bytes.
    * @returns A {@link Promise} that resolves when the file is written.
    */
-  writeFile(relativePath: string, data: Uint8Array): Promise<void>;
+  writeFile: (relativePath: string, data: Uint8Array) => Promise<void>;
 }
 
 interface ConvertLinkParams {
