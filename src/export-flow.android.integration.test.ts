@@ -71,7 +71,7 @@ interface EditableSettings {
  * The settings component reduced to its one write path.
  */
 interface EditableSettingsComponent {
-  editAndSave(this: void, settingsEditor: (settings: EditableSettings) => void): Promise<void>;
+  editAndSave: (this: void, settingsEditor: (settings: EditableSettings) => void) => Promise<void>;
 }
 
 /**
