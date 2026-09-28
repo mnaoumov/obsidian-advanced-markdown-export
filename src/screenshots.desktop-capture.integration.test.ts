@@ -35,6 +35,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as sleepInNode } from 'node:timers/promises';
 import {
+  applyObsidianTheme,
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
@@ -85,7 +86,7 @@ const TEST_TIMEOUT_IN_MILLISECONDS = 300_000;
 const TREE_MODAL_SELECTOR = '.advanced-markdown-export-tree-modal';
 const TREE_PATH_SELECTOR = '.advanced-markdown-export-path';
 
-const THEME_SETTLE_DELAY_IN_MILLISECONDS = 1000;
+const NOTE_SETTLE_DELAY_IN_MILLISECONDS = 1000;
 const TREE_SETTLE_DELAY_IN_MILLISECONDS = 900;
 
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
@@ -127,8 +128,6 @@ beforeAll(async () => {
       return (cache?.embeds?.length ?? 0) > 0 && (cache?.links?.length ?? 0) > 0;
     },
     start({ app }): void {
-      app.changeTheme('obsidian');
-
       // The modal is the subject, not the file explorer, so the sidebar is collapsed to give it the frame.
       app.workspace.leftSplit.collapse();
 
@@ -157,7 +156,15 @@ beforeAll(async () => {
     vaultPath: vaultPath()
   });
 
-  await sleepInNode(THEME_SETTLE_DELAY_IN_MILLISECONDS);
+  /*
+   * Not a bare `app.changeTheme('obsidian')`: that only schedules the config save, a second later, and a
+   * config reload landing first drops `theme`, so every frame is shot light over the committed dark ones.
+   * This saves at once and waits until the theme is on screen and on disk, and `captureObsidianScreenshot`
+   * then refuses any frame that has left it.
+   */
+  await applyObsidianTheme({ theme: 'dark', vaultPath: vaultPath() });
+
+  await sleepInNode(NOTE_SETTLE_DELAY_IN_MILLISECONDS);
 }, TEST_TIMEOUT_IN_MILLISECONDS);
 
 describe('desktop frames of the export tree', () => {
