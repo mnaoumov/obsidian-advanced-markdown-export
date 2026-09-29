@@ -1,14 +1,16 @@
 /*
- * The `/browser` subpath is deliberate and load-bearing - never shorten it to plain `fflate`.
+ * The `/browser` subpath is deliberate - keep it rather than shortening it to plain `fflate`.
  *
- * `fflate`'s `exports['.']` map lists its `node` condition FIRST, and the plugin bundler runs esbuild with
- * `platform: 'node'`, which puts `node` back into the active conditions even though `conditions: ['browser']`
- * asks for the browser build. Bare `fflate` therefore bundles `esm/index.mjs`, whose first two lines are
- * `import { createRequire } from 'module'` - so the module body throws `createRequire is not a function` the
- * moment its body loads on a phone, taking the whole mobile export path down with it.
+ * `fflate`'s `exports['.']` map lists its `node` condition FIRST. The plugin bundler used to run esbuild with
+ * `platform: 'node'`, which put `node` back into the active conditions even though `conditions: ['browser']`
+ * asked for the browser build. Bare `fflate` therefore bundled `esm/index.mjs`, whose first two lines are
+ * `import { createRequire } from 'module'` - so the module body threw `createRequire is not a function` the
+ * moment it loaded on a phone, taking the whole mobile export path down with it (1.0.0).
  *
- * The `/browser` subpath has no `node` condition to lose to, and nothing here needs the Node build:
- * `zipSync` is synchronous and touches none of the `worker_threads` machinery that build exists to add.
+ * `obsidian-dev-utils` 107.0.0 moved the bundler to `platform: 'neutral'`, which adds no `node` condition, so
+ * bare `fflate` would now resolve to the browser build too. The subpath stays anyway: it states the intent at
+ * the call site and survives a future bundler regression. Nothing here needs the Node build: `zipSync` is
+ * synchronous and touches none of the `worker_threads` machinery that build exists to add.
  */
 import { zipSync } from 'fflate/browser';
 import { noopAsync } from 'obsidian-dev-utils/function';
