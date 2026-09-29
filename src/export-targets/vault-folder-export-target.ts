@@ -1,6 +1,5 @@
 import type { App } from 'obsidian';
 
-import { toArrayBuffer } from 'obsidian-dev-utils/array-buffer';
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { getOrCreateFolder } from 'obsidian-dev-utils/obsidian/file-system';
 import {
@@ -9,6 +8,8 @@ import {
 } from 'obsidian-dev-utils/path';
 
 import type { ExportTarget } from '../export-writer.ts';
+
+import { createBinaryVerified } from './create-binary-verified.ts';
 
 interface VaultFolderExportTargetConstructorParams {
   readonly app: App;
@@ -36,6 +37,6 @@ export class VaultFolderExportTarget implements ExportTarget {
   public async writeFile(relativePath: string, data: Uint8Array): Promise<void> {
     const path = join(this.bundleFolderPath, relativePath);
     await getOrCreateFolder(this.app, dirname(path));
-    await this.app.vault.createBinary(path, toArrayBuffer(data));
+    await createBinaryVerified(this.app, path, data);
   }
 }
