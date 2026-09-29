@@ -1,4 +1,7 @@
-import type { TFile as TFileOriginal } from 'obsidian';
+import type {
+  CachedMetadata,
+  TFile as TFileOriginal
+} from 'obsidian';
 
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -158,11 +161,20 @@ describe('exportBundle', () => {
     });
 
     /*
-     * A body wikilink always reports a display text, aliased or not. A FRONTMATTER one only does when it
-     * carries an explicit alias - so that is where the fallback to the link path actually earns its keep.
+     * `Reference.displayText` is optional in the API, but the parser reports one for every wikilink, body and
+     * frontmatter alike, aliased or not. So the fallback to the link path is reached only by taking the
+     * display text off the parsed frontmatter link here.
      */
     it('should fall back to the link path when the link carries no display text', async () => {
       settings.danglingLinkAction = DanglingLinkAction.ReplaceWithDisplayText;
+      const computeMetadataAsync = app.metadataCache.computeMetadataAsync.bind(app.metadataCache);
+      app.metadataCache.computeMetadataAsync = async (data: ArrayBuffer): Promise<CachedMetadata> => {
+        const cache = await computeMetadataAsync(data);
+        for (const link of cache.frontmatterLinks ?? []) {
+          delete link.displayText;
+        }
+        return cache;
+      };
       const exported = await exportWithout('---\nrelated: "[[B]]"\n---\n\nBody.');
 
       // Asserted by content rather than verbatim: rewriting a frontmatter value re-serializes the YAML.

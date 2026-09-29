@@ -183,13 +183,8 @@ export class DependencyResolver {
     }
 
     const cache = this.app.metadataCache.getFileCache(dependency.file);
-
-    if (!cache) {
-      return false;
-    }
-
-    const tags = getAllTags(cache) ?? [];
-    return this.settings.ignoredTags.some((ignoredTag) => tags.includes(normalizeTag(ignoredTag)));
+    const tags = cache ? getAllTags(cache) : null;
+    return tags !== null && this.settings.ignoredTags.some((ignoredTag) => tags.includes(normalizeTag(ignoredTag)));
   }
 
   private toDependency(source: TFile, reference: Reference, isEmbed: boolean): Dependency {
