@@ -1,4 +1,3 @@
-import { toArrayBuffer } from 'obsidian-dev-utils/array-buffer';
 import { getOrCreateFolder } from 'obsidian-dev-utils/obsidian/file-system';
 import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
 import {
@@ -12,6 +11,7 @@ import type {
   ResolveExportTargetParams
 } from './export-destination.ts';
 
+import { createBinaryVerified } from '../export-targets/create-binary-verified.ts';
 import { VaultFolderExportTarget } from '../export-targets/vault-folder-export-target.ts';
 import { ZipExportTarget } from '../export-targets/zip-export-target.ts';
 
@@ -60,7 +60,7 @@ export class MobileExportDestination implements ExportDestination {
               await getOrCreateFolder(params.app, archiveFolderPath);
             }
 
-            await params.app.vault.createBinary(archivePath, toArrayBuffer(archive));
+            await createBinaryVerified(params.app, archivePath, archive);
           }
         })
       };
