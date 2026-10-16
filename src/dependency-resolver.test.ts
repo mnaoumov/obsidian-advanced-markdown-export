@@ -1,7 +1,7 @@
 import type { TFile as TFileOriginal } from 'obsidian';
 import type { TFile } from 'obsidian-test-mocks/obsidian';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,

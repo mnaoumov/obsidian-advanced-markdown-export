@@ -1,6 +1,6 @@
-import type { MarkdownlintCli2ConfigurationSchema } from 'obsidian-dev-utils/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema';
+import type { MarkdownlintCli2ConfigurationSchema } from '@mnaoumov/typescript-dev-toolkit/linters/markdownlint-types/@types/markdownlint-cli2-config-schema';
 
-import { obsidianDevUtilsConfig } from 'obsidian-dev-utils/script-utils/linters/markdownlint-cli2-config';
+import { obsidianMarkdownlintCli2Config } from '@mnaoumov/obsidian-dev-toolkit/linters/markdownlint-cli2-config';
 
 /*
  * `demo-vault/Example/` is the fixture GRAPH the plugin is demonstrated on, not documentation about it.
@@ -10,13 +10,13 @@ import { obsidianDevUtilsConfig } from 'obsidian-dev-utils/script-utils/linters/
  * the folder is excluded outright. It is data; there is no prose in it to lint.
  */
 export const config: MarkdownlintCli2ConfigurationSchema = {
-  ...obsidianDevUtilsConfig,
+  ...obsidianMarkdownlintCli2Config,
   config: {
-    ...obsidianDevUtilsConfig.config,
+    ...obsidianMarkdownlintCli2Config.config,
     'no-soft-break-in-paragraph': true
   },
   ignores: [
-    ...obsidianDevUtilsConfig.ignores ?? [],
+    ...obsidianMarkdownlintCli2Config.ignores ?? [],
     'demo-vault/Example/**'
   ]
 };

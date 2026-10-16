@@ -1,9 +1,9 @@
-import { getOrCreateFolder } from 'obsidian-dev-utils/obsidian/file-system';
-import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
+import { getOrCreateFolder } from '@mnaoumov/obsidian-lib/file-system';
+import { prompt } from '@mnaoumov/obsidian-lib/modals/prompt';
 import {
   dirname,
   join
-} from 'obsidian-dev-utils/path';
+} from '@mnaoumov/typescript-lib/path';
 
 import type {
   ExportDestination,

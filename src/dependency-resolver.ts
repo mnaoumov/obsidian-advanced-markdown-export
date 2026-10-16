@@ -4,21 +4,21 @@ import type {
   TFile
 } from 'obsidian';
 
-import { getAllTags } from 'obsidian';
-import { getCanvasReferences } from 'obsidian-dev-utils/obsidian/canvas';
+import { getCanvasReferences } from '@mnaoumov/obsidian-lib/canvas';
 import {
   isCanvasFile,
   isNote
-} from 'obsidian-dev-utils/obsidian/file-system';
+} from '@mnaoumov/obsidian-lib/file-system';
 import {
   extractLinkFile,
   splitSubpath
-} from 'obsidian-dev-utils/obsidian/link';
+} from '@mnaoumov/obsidian-lib/link';
 import {
   getCacheSafe,
   getLinks
-} from 'obsidian-dev-utils/obsidian/metadata-cache';
-import { isCanvasFileNodeReference } from 'obsidian-dev-utils/obsidian/reference';
+} from '@mnaoumov/obsidian-lib/metadata-cache';
+import { isCanvasFileNodeReference } from '@mnaoumov/obsidian-lib/reference';
+import { getAllTags } from 'obsidian';
 
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 
@@ -91,7 +91,7 @@ interface ResolvedReference {
  * lazy-expansion assertion - that this resolver is never called for a node the user has not opened -
  * meaningful rather than accidental.
  *
- * Every link is read through `obsidian-dev-utils`, never through a regular expression over raw content.
+ * Every link is read through `@mnaoumov/obsidian-lib`, never through a regular expression over raw content.
  * That is what makes frontmatter links, code fences and canvas nodes work here when they do not work in
  * the plugins this one was written to replace.
  */

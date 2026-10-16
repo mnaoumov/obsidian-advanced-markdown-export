@@ -1,6 +1,6 @@
 import type { App } from 'obsidian';
 
-import { toArrayBuffer } from 'obsidian-dev-utils/array-buffer';
+import { toArrayBuffer } from '@mnaoumov/typescript-lib/array-buffer';
 
 /**
  * How many writes a file gets before the export gives up on it: the create, then this many rewrites less one.

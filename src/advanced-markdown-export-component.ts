@@ -1,20 +1,20 @@
+import type { CommandRegistrar } from '@mnaoumov/obsidian-lib/command-registrar';
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type { MenuEventRegistrar } from '@mnaoumov/obsidian-lib/menu-event-registrar';
 import type {
   App,
   Menu,
   TAbstractFile
 } from 'obsidian';
-import type { CommandRegistrar } from 'obsidian-dev-utils/obsidian/command-registrar';
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import type { MenuEventRegistrar } from 'obsidian-dev-utils/obsidian/menu-event-registrar';
 
-import { TFolder } from 'obsidian';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import {
   isNote,
   trimMarkdownExtension
-} from 'obsidian-dev-utils/obsidian/file-system';
-import { basename } from 'obsidian-dev-utils/path';
+} from '@mnaoumov/obsidian-lib/file-system';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
+import { basename } from '@mnaoumov/typescript-lib/path';
+import { TFolder } from 'obsidian';
 
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 

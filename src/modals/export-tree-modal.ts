@@ -1,19 +1,19 @@
+import type { PromiseResolve } from '@mnaoumov/typescript-lib/async';
 import type {
   App,
   ButtonComponent,
   TFile
 } from 'obsidian';
-import type { PromiseResolve } from 'obsidian-dev-utils/async';
 
+import { showModal } from '@mnaoumov/obsidian-lib/modals/modal';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
+import { formatBytes } from '@mnaoumov/typescript-lib/bytes';
+import { basename } from '@mnaoumov/typescript-lib/path';
 import {
   Modal,
   setIcon,
   Setting
 } from 'obsidian';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
-import { formatBytes } from 'obsidian-dev-utils/bytes';
-import { showModal } from 'obsidian-dev-utils/obsidian/modals/modal';
-import { basename } from 'obsidian-dev-utils/path';
 
 import type {
   ExportForest,
@@ -63,7 +63,7 @@ const KIND_ICONS: Record<DependencyKind, string> = {
 };
 
 /**
- * The forest, drawn on Obsidian's own `tree-item` classes - `obsidian-dev-utils` has no tree component,
+ * The forest, drawn on Obsidian's own `tree-item` classes - `@mnaoumov/obsidian-lib` has no tree component,
  * so this is the one genuinely hand-built piece of UI in the plugin.
  */
 class ExportTreeModal extends Modal {

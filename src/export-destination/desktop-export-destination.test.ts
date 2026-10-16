@@ -3,6 +3,7 @@ import type {
   ElectronOpenDialogReturnValue
 } from '@obsidian-typings/obsidian-public-latest';
 
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { unzipSync } from 'fflate';
 import {
   mkdtemp,
@@ -11,7 +12,6 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { castTo } from 'obsidian-dev-utils/object-utils';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,

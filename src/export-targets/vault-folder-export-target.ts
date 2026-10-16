@@ -1,11 +1,11 @@
 import type { App } from 'obsidian';
 
-import { noopAsync } from 'obsidian-dev-utils/function';
-import { getOrCreateFolder } from 'obsidian-dev-utils/obsidian/file-system';
+import { getOrCreateFolder } from '@mnaoumov/obsidian-lib/file-system';
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import {
   dirname,
   join
-} from 'obsidian-dev-utils/path';
+} from '@mnaoumov/typescript-lib/path';
 
 import type { ExportTarget } from '../export-writer.ts';
 
