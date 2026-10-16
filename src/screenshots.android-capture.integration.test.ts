@@ -56,22 +56,6 @@ import {
 } from 'vitest';
 
 /**
- * `App`, reduced to the font-size applier that `obsidian-typings` does not declare. Setting
- * `baseFontSize` alone changes nothing on screen.
- */
-interface FontSizeApp {
-  updateFontSize: (this: void) => void;
-}
-
-/**
- * `App`, reduced to the inline-title toggle that `obsidian-typings` does not declare. Setting
- * `showInlineTitle` alone changes nothing on screen.
- */
-interface InlineTitleApp {
-  updateInlineTitleDisplay: (this: void) => void;
-}
-
-/**
  * What is painted over the screen at the moment of the shutter.
  */
 interface Overlays {
@@ -188,14 +172,12 @@ beforeAll(async () => {
        * config alone changes nothing on screen; the applier is what re-renders.
        */
       app.vault.setConfig('baseFontSize', fontSizeInPixels);
-      const fontApp: unknown = app;
-      (fontApp as FontSizeApp).updateFontSize();
+      app.updateFontSize();
 
       // The example note's own `# A` heading already titles it, so Obsidian's inline title renders the
       // name twice.
       app.vault.setConfig('showInlineTitle', false);
-      const inlineTitleApp: unknown = app;
-      (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
+      app.updateInlineTitleDisplay();
     },
     timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
     timeoutMessage: 'the fixture graph never reached the metadata cache',
