@@ -1,16 +1,16 @@
+import type { MaybeReturn } from '@mnaoumov/typescript-lib/type';
 import type {
   App,
   Reference,
   TFile
 } from 'obsidian';
-import type { MaybeReturn } from 'obsidian-dev-utils/type';
 
-import { isMarkdownFile } from 'obsidian-dev-utils/obsidian/file-system';
+import { isMarkdownFile } from '@mnaoumov/obsidian-lib/file-system';
 import {
   editLinksInContent,
   extractLinkFile,
   splitSubpath
-} from 'obsidian-dev-utils/obsidian/link';
+} from '@mnaoumov/obsidian-lib/link';
 
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 

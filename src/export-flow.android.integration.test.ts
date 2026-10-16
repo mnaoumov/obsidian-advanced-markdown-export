@@ -92,7 +92,7 @@ const TREE_MODAL_SELECTOR = '.advanced-markdown-export-tree-modal';
 const TREE_PATH_SELECTOR = '.advanced-markdown-export-path';
 
 /**
- * The destination prompt is `obsidian-dev-utils`' shared one, so its own class is generic; the plugin id
+ * The destination prompt is `@mnaoumov/obsidian-lib`'s shared one, so its own class is generic; the plugin id
  * is on the same element because the library scopes every modal it opens to the plugin that opened it.
  */
 const PROMPT_MODAL_SELECTOR = `.prompt-modal.${PLUGIN_ID}`;

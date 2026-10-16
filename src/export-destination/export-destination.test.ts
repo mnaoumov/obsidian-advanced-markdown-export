@@ -1,5 +1,5 @@
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { Platform } from 'obsidian';
-import { castTo } from 'obsidian-dev-utils/object-utils';
 import {
   beforeAll,
   beforeEach,
@@ -22,7 +22,7 @@ vi.mock('obsidian', async (importOriginal) => ({
 
 /*
  * Both destinations are reached through a conditional `await import()`, and the first load of each pulls in
- * a large part of `obsidian-dev-utils` (the mobile one `fflate` too, through the ZIP target). Cold, that
+ * a large part of `@mnaoumov/obsidian-lib` (the mobile one `fflate` too, through the ZIP target). Cold, that
  * transform measured 1.7 s for the mobile module against 0.2 s for the desktop one on an idle machine, and
  * once went past vitest's 5 s default on a loaded one - a red gate that reads exactly like a regression.
  * So both modules are loaded once up front, under a budget stated here, and each test times only the choice.

@@ -1,3 +1,4 @@
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import {
   mkdir,
   writeFile
@@ -6,7 +7,6 @@ import {
   dirname,
   join
 } from 'node:path';
-import { noopAsync } from 'obsidian-dev-utils/function';
 
 import type { ExportTarget } from '../export-writer.ts';
 import type {

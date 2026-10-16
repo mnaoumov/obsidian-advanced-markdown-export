@@ -7,7 +7,7 @@ import {
   asFile,
   isFolder,
   isNote
-} from 'obsidian-dev-utils/obsidian/file-system';
+} from '@mnaoumov/obsidian-lib/file-system';
 
 import type { DependencyResolver } from './dependency-resolver.ts';
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';

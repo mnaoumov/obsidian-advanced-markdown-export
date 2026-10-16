@@ -4,8 +4,8 @@ import type {
   TFile
 } from 'obsidian';
 
-import { setTimeoutAsync } from 'obsidian-dev-utils/async';
-import { castTo } from 'obsidian-dev-utils/object-utils';
+import { setTimeoutAsync } from '@mnaoumov/typescript-lib/async';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   App,
   ButtonComponent,

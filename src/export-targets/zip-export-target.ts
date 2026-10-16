@@ -1,3 +1,4 @@
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
 /*
  * The `/browser` subpath is deliberate - keep it rather than shortening it to plain `fflate`.
  *
@@ -13,7 +14,6 @@
  * synchronous and touches none of the `worker_threads` machinery that build exists to add.
  */
 import { zipSync } from 'fflate/browser';
-import { noopAsync } from 'obsidian-dev-utils/function';
 
 import type { ExportTarget } from '../export-writer.ts';
 

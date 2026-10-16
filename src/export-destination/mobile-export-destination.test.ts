@@ -1,5 +1,5 @@
+import { prompt } from '@mnaoumov/obsidian-lib/modals/prompt';
 import { unzipSync } from 'fflate';
-import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -15,7 +15,7 @@ import { PluginSettings } from '../plugin-settings.ts';
 import { MobileExportDestination } from './mobile-export-destination.ts';
 
 // The one place the flow waits for a human, and the only thing stubbed here.
-vi.mock('obsidian-dev-utils/obsidian/modals/prompt', () => ({ prompt: vi.fn() }));
+vi.mock('@mnaoumov/obsidian-lib/modals/prompt', () => ({ prompt: vi.fn() }));
 
 describe('MobileExportDestination', () => {
   let app: App;
