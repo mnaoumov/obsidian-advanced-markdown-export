@@ -10,6 +10,13 @@ The `Example` folder holds a deliberately awkward little graph. It is small enou
 
 Right-click `Example/A.md` and choose **Export with dependencies**. The tree opens like this — `A`'s attachments checked, its linked note not:
 
+```code-button
+---
+caption: Open the export dialog on A
+---
+await require('/demoSetup.ts').openExportDialogFromContextMenu(app, 'Example/A.md');
+```
+
 ```text
 [x] A.md
   [x] A1.png
@@ -19,6 +26,13 @@ Right-click `Example/A.md` and choose **Export with dependencies**. The tree ope
 ```
 
 Tick `B.md`. It expands, and the same rule applies one level down:
+
+```code-button
+---
+caption: Open it on A with B ticked
+---
+await require('/demoSetup.ts').openExampleTreeWithTickedNotes(app, ['Example/B.md'], ['Example/A.md']);
+```
 
 ```text
 [x] A.md
@@ -35,6 +49,13 @@ That last row is the cycle. `A` is already in the export, so its second appearan
 
 Now tick `C.md` too, and the diamond shows up the same way:
 
+```code-button
+---
+caption: Open it on A with B and C ticked
+---
+await require('/demoSetup.ts').openExampleTreeWithTickedNotes(app, ['Example/B.md', 'Example/C.md'], ['Example/A.md', 'Example/Attachments/A1.png']);
+```
+
 ```text
     [x] C.md
       [x] A1.png   <- greyed out: already included under A
@@ -45,3 +66,12 @@ Now tick `C.md` too, and the diamond shows up the same way:
 ## Try a folder root
 
 Right-click the `Example` folder instead. Now `A`, `B` and `C` are all roots, side by side at the top of the tree — and because each one is already a root, none of them re-expands as a dependency of the others. Their attachments still arrive checked.
+
+```code-button
+---
+caption: Open the export dialog on the Example folder
+---
+await require('/demoSetup.ts').openExportDialogFromContextMenu(app, 'Example');
+```
+
+The buttons do the right-click and the ticking for you. Doing it by hand is the manual equivalent each paragraph above describes: right-click the note or the folder, choose **Export with dependencies**, and tick the rows yourself.
