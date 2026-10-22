@@ -10,13 +10,13 @@
   "dictionaries": [],
   "words": [
     "asar",
+    "backlink",
     "dblclick",
     "ECONNRESET",
     "EOVERRIDE",
     "fflate",
-    "GHSA",
-    "hrqm",
     "Invocables",
+    "katex",
     "lezer",
     "macrotask",
     "mnaoumov",
@@ -28,7 +28,6 @@
     "Popout",
     "reimplementation",
     "Seedable",
-    "smol",
     "subfolders",
     "tsbuildinfo",
     "untick",
@@ -39,6 +38,9 @@
     "wdio",
     "wikilink",
     "wikilinks"
+  ],
+  "ignoreRegExpList": [
+    "/GHSA(-[0-9a-z]{4}){3}/gi"
   ],
   "ignoreWords": [],
   "import": [],
