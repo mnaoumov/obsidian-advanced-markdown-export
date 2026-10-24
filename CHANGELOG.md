@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.3
+
+- chore(deps): move from `obsidian-dev-utils` to `@mnaoumov/obsidian-lib` 6 and `@mnaoumov/obsidian-dev-toolkit` 5
+- chore: write every vault file through a verified write, so an Android write that silently lands empty is retried
+- build(deps): float `brace-expansion`, `sharp` and `fast-uri` past their advisories
+- ci: attest release assets through the toolkit's reusable workflow
+- docs(readme): lead the Debugging section with `Advanced Debug Mode`, and shorten it
+- docs(demo-vault): add code buttons to the example-graph Try it walkthrough
+- docs: mark plugin names as code
+- chore(github): point questions to Discussions from the new-issue page
+
 ## 1.0.2
 
 - chore(deps): update obsidian-test-mocks to 7 and obsidian-integration-testing to 17
