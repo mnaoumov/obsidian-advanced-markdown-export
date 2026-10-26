@@ -78,6 +78,23 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 On the desktop, **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault. On mobile there is no such picker, so it goes to a vault-relative folder instead. Either way, turning on **Create a ZIP archive** gives you a single `.zip` rather than a folder.
 
+## Similar plugins
+
+- [`Linked Note Exporter`](https://community.obsidian.md/plugins/linked-note-exporter) — exports a note with its attachments and linked notes to a folder or a ZIP, following links to a depth set in settings, with ignored folders and tags; this plugin has no depth setting, and you tick each file in a tree instead.
+- [`Share as ZIP`](https://community.obsidian.md/plugins/share-as-zip) — zips the current note with every note it links to, followed recursively, and its attachments, trimmed by exclusion rules set in advance; this plugin shows what would go in and lets you untick it before anything is written.
+- [`Export Markdown ZIP`](https://community.obsidian.md/plugins/export-markdown-zip) — zips the active note with the notes it links to, followed recursively, and their local attachments, rewriting links to relative paths, on desktop only; this plugin lets you pick the files and works on mobile too.
+- [`Cluster Export`](https://community.obsidian.md/plugins/cluster-export) — builds a cluster of linked notes in a graph view, which you prune note by note, and exports it as Markdown with an assets folder, keeping it in sync if you want, on desktop only; this plugin picks the files in a tree and exports once.
+- [`markdown export`](https://community.obsidian.md/plugins/obsidian-markdown-export-plugin) — exports a note or a folder with its images and embeds to a folder, as Markdown or HTML; it does not bring linked notes along, which this plugin offers one by one.
+- [`Smart Export`](https://community.obsidian.md/plugins/smart-export) — follows links from a note to a set depth and joins the notes into one Markdown or XML document, for reading or as context for an LLM; this plugin keeps every note a separate file, with its attachments.
+- [`Canvas Bundle`](https://community.obsidian.md/plugins/canvas-bundle) — zips a canvas with the notes and attachments it shows; this plugin starts from notes and folders, and copies a canvas as it is.
+- [`Trans Vault`](https://community.obsidian.md/plugins/transvault) — copies or moves notes and folders into another local vault, with a reviewed tree of their direct links, on desktop only; this plugin writes a bundle anywhere and follows links as deep as you tick.
+- [`Copy Notes to Vault`](https://community.obsidian.md/plugins/copy-notes-to-vault) — copies notes ticked in a folder tree, with their attachments, into another vault, on desktop only; it does not follow links to other notes.
+- [`NoteParcel`](https://community.obsidian.md/plugins/vault-bridge-toolkit) — copies selected notes and folders, with their attachments and updated links, into another vault, on desktop only; it does not follow links to other notes.
+- [`Codex Share`](https://community.obsidian.md/plugins/codex-share) — keeps notes marked by a property, and the attachments they embed, copied and synced into a folder outside the vault, for an AI workspace; it does not follow links to other notes.
+- [`Obsidian Bundler`](https://github.com/zombie110year/obsidian-bundler) — not in the community directory; walks the links from the current note and copies every related note and attachment into one directory, notes flattened and attachments in `assets`, with no choice of what goes in.
+
+Last searched for similar plugins on 2026-10-26.
+
 ## Installation
 
 The plugin is available in [the official Community Plugins repository](https://community.obsidian.md/plugins/advanced-markdown-export).
