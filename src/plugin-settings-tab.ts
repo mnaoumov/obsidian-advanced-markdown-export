@@ -46,8 +46,8 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         desc: 'A safety cap on how deep the tree may grow. This is not the depth control - depth is driven by which notes you tick. The cap only stops a pathological graph expanding without bound.',
         name: 'Maximum traversal depth',
         render: (setting) => {
-          setting.addNumber((number) => {
-            this.bind({ propertyName: 'maxTraversalDepth', valueComponent: number });
+          setting.addNumber(($number) => {
+            this.bind({ propertyName: 'maxTraversalDepth', valueComponent: $number });
           });
         }
       }),
