@@ -63,7 +63,9 @@ interface BundleFolder {
  * The two settings this suite writes, as the editor closure sees them.
  */
 interface EditableSettings {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The settings editor assigns the destination for each test.
   outputFolderPath: string;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The settings editor selects folder or ZIP output for each test.
   shouldCreateZip: boolean;
 }
 
@@ -71,7 +73,7 @@ interface EditableSettings {
  * The settings component reduced to its one write path.
  */
 interface EditableSettingsComponent {
-  editAndSave: (this: void, settingsEditor: (settings: EditableSettings) => void) => Promise<void>;
+  readonly editAndSave: (this: void, settingsEditor: (settings: EditableSettings) => void) => Promise<void>;
 }
 
 /**
@@ -82,7 +84,7 @@ interface EditableSettingsComponent {
  * device to tick a checkbox - would test Obsidian's settings UI rather than the export.
  */
 interface SettingsEditablePlugin {
-  pluginSettingsComponent: EditableSettingsComponent;
+  readonly pluginSettingsComponent: EditableSettingsComponent;
 }
 
 const MENU_ITEM_TITLE = 'Export with dependencies';

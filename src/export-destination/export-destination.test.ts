@@ -12,6 +12,7 @@ import {
 import { createExportDestination } from './export-destination.ts';
 
 interface MockIsDesktopApp {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Each test selects the platform branch by changing this mock flag.
   isDesktopApp: boolean;
 }
 
