@@ -50,6 +50,7 @@ interface RenderedRow {
    * detached elements behind in the row index. Held as entries rather than ids so forgetting one never
    * has to look it up and handle a miss.
    */
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Rendering replaces the child rows when a subtree changes.
   childRows: [NodeId, RenderedRow][];
   readonly selfEl: HTMLElement;
 }

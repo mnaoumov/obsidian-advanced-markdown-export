@@ -18,15 +18,15 @@ import {
 } from './plugin-settings.ts';
 
 interface ProtectedBase {
-  onLoadRecord: (record: unknown) => Promise<void>;
-  onSavingRecord: (record: unknown) => Promise<void>;
-  registerValidator: (key: string, validator: unknown) => void;
-  registerValidators: () => void;
+  readonly onLoadRecord: (record: unknown) => Promise<void>;
+  readonly onSavingRecord: (record: unknown) => Promise<void>;
+  readonly registerValidator: (key: string, validator: unknown) => void;
+  readonly registerValidators: () => void;
 }
 
 interface RegisteredValidator {
-  key: string;
-  validator: (value: number) => string | undefined;
+  readonly key: string;
+  readonly validator: (value: number) => string | undefined;
 }
 
 const protectedBasePrototype = castTo<ProtectedBase>(PluginSettingsComponentBase.prototype);

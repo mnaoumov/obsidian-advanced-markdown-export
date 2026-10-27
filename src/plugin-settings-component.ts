@@ -16,6 +16,7 @@ interface PluginSettingsComponentConstructorParams {
 }
 
 interface SerializedSettings {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Saving replaces the action instance with its serialized name in this record.
   danglingLinkAction: string;
 }
 

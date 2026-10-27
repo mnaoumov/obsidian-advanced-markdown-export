@@ -32,6 +32,7 @@ import { DesktopExportDestination } from './desktop-export-destination.ts';
  * whole reason this module exists, so the test that it actually lands on disk is the one worth having.
  */
 interface WindowWithElectron {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Test setup installs the Electron mock and teardown removes it.
   electron: ElectronModule | undefined;
 }
 

@@ -102,11 +102,13 @@ interface ExportForestCreateNodeParams {
 }
 
 interface MutableNode {
-  childIds: NodeId[];
+  readonly childIds: NodeId[];
   readonly depth: number;
   readonly file: null | TFile;
   readonly id: NodeId;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Expansion changes as the user opens and collapses this node.
   isExpanded: boolean;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Lazy resolution marks this node after its dependencies are loaded.
   isResolved: boolean;
   readonly kind: DependencyKind;
   readonly ownerId: NodeId;
