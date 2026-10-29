@@ -7,8 +7,8 @@ import type {
 
 import { isMarkdownFile } from '@mnaoumov/obsidian-lib/file-system';
 import {
-  editLinksInContent,
-  extractLinkFile,
+  editReferencesInContent,
+  extractReferenceFile,
   splitSubpath
 } from '@mnaoumov/obsidian-lib/link';
 
@@ -115,9 +115,9 @@ export async function exportBundle(params: ExportBundleParams): Promise<void> {
  * Decides what a single link becomes in the bundle. Returning nothing leaves it exactly as written.
  */
 function convertLink(link: Reference, params: ConvertLinkParams): MaybeReturn<string> {
-  const targetFile = extractLinkFile({
+  const targetFile = extractReferenceFile({
     app: params.app,
-    link,
+    reference: link,
     sourcePathOrFile: params.file
   });
 
@@ -140,9 +140,9 @@ function convertLink(link: Reference, params: ConvertLinkParams): MaybeReturn<st
 
 async function rewriteLinks(params: ConvertLinkParams): Promise<string> {
   const content = await params.app.vault.read(params.file);
-  return editLinksInContent({
+  return editReferencesInContent({
     app: params.app,
     content,
-    linkConverter: (link) => convertLink(link, params)
+    referenceConverter: (link) => convertLink(link, params)
   });
 }
