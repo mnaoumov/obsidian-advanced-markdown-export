@@ -10,12 +10,12 @@ import {
   isNote
 } from '@mnaoumov/obsidian-lib/file-system';
 import {
-  extractLinkFile,
+  extractReferenceFile,
   splitSubpath
 } from '@mnaoumov/obsidian-lib/link';
 import {
   getCacheSafe,
-  getLinks
+  getReferences
 } from '@mnaoumov/obsidian-lib/metadata-cache';
 import { isCanvasFileNodeReference } from '@mnaoumov/obsidian-lib/reference';
 import { getAllTags } from 'obsidian';
@@ -161,8 +161,8 @@ export class DependencyResolver {
 
     const embeds = new Set<Reference>(cache.embeds);
 
-    // `getLinks` pushes the very objects held by `cache.embeds`, so identity membership marks the embeds.
-    return getLinks({ cache }).map((reference) => ({
+    // `getReferences` pushes the very objects held by `cache.embeds`, so identity membership marks the embeds.
+    return getReferences({ cache }).map((reference) => ({
       isEmbed: embeds.has(reference),
       reference
     }));
@@ -189,9 +189,9 @@ export class DependencyResolver {
 
   private toDependency(source: TFile, reference: Reference, isEmbed: boolean): Dependency {
     const { linkPath, subpath } = splitSubpath(reference.link);
-    const file = extractLinkFile({
+    const file = extractReferenceFile({
       app: this.app,
-      link: reference,
+      reference,
       sourcePathOrFile: source
     });
 
