@@ -1,3 +1,4 @@
+import { OpenBugReportCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-bug-report-command-handler';
 import { OpenDemoVaultCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler';
 import { PluginCommandRegistrar } from '@mnaoumov/obsidian-lib/command-registrar';
 import { MenuEventRegistrarComponent } from '@mnaoumov/obsidian-lib/components/menu-event-registrar-component';
@@ -43,6 +44,11 @@ export class Plugin extends PluginBase {
     );
 
     await this.commandHandlerComponent.registerCommandHandlers(() => [
+      new OpenBugReportCommandHandler({
+        app: this.app,
+        gitHubRepo: 'mnaoumov/obsidian-advanced-markdown-export',
+        pluginId: this.manifest.id
+      }),
       new OpenDemoVaultCommandHandler({
         app: this.app,
         pluginId: this.manifest.id,
