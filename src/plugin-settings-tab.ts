@@ -61,6 +61,15 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         }
       }),
       this.settingEx({
+        desc: 'The code block languages that are rendered when Render plugin code blocks is on.',
+        name: 'Rendered code block languages',
+        render: (setting) => {
+          setting.addMultipleText((multipleText) => {
+            this.bind({ propertyName: 'renderedCodeBlockLanguages', valueComponent: multipleText });
+          });
+        }
+      }),
+      this.settingEx({
         desc: 'An embedded image is part of the note, so it arrives checked.',
         name: 'Check attachments by default',
         render: (setting) => {
@@ -93,6 +102,15 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         render: (setting) => {
           setting.addToggle((toggle) => {
             this.bind({ propertyName: 'shouldIncludeSubfolders', valueComponent: toggle });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: 'Replace each plugin code block, such as a query, with what it renders, so a reader without the plugin sees the result instead of the query.',
+        name: 'Render plugin code blocks',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({ propertyName: 'shouldRenderPluginCodeBlocks', valueComponent: toggle });
           });
         }
       }),

@@ -63,6 +63,14 @@ Links pointing at files you left out are the one case that needs a decision — 
 
 That rewriting applies to markdown. Every other file is copied byte for byte, a canvas included — so a canvas node pointing at a file you excluded keeps that node as it was, whatever the setting says.
 
+### `Dataview` and `Tasks` queries
+
+A note built on a `Dataview` or `Tasks` query is only a query on disk. Send it to someone without that plugin and they get the query text, not the list it shows you.
+
+Turn on **Render plugin code blocks** and each such block is replaced in the exported note by what it renders, converted to markdown: a table stays a table, a task list stays a list. The **Rendered code block languages** setting says which blocks count; it starts with `dataview`, `dataviewjs` and `tasks`. Links inside the rendered output follow the **Dangling links** setting like any other link.
+
+It is off by default, because a recipient who has the plugin may want the live query rather than a snapshot. Only blocks at the start of a line are rendered: a query inside a list, a quote or a callout stays as written. A block whose plugin is not installed, or that renders nothing, also stays as written.
+
 ## Where it goes
 
 On the desktop, choosing **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault.

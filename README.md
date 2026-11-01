@@ -78,6 +78,8 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 On the desktop, **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault. On mobile there is no such picker, so it goes to a vault-relative folder instead. Either way, turning on **Create a ZIP archive** gives you a single `.zip` rather than a folder.
 
+Notes built on `Dataview` or `Tasks` queries can travel as their results: turn on **Render plugin code blocks** and each query is replaced in the export by what it renders, converted to markdown, so a reader without the plugin sees the list rather than the query.
+
 ## See also
 
 [My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)

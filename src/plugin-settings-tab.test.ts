@@ -39,10 +39,12 @@ const EXPECTED_BOUND_KEYS: (keyof PluginSettings)[] = [
   'ignoredTags',
   'maxTraversalDepth',
   'outputFolderPath',
+  'renderedCodeBlockLanguages',
   'shouldCheckAttachmentsByDefault',
   'shouldCheckLinkedNotesByDefault',
   'shouldCreateZip',
   'shouldIncludeSubfolders',
+  'shouldRenderPluginCodeBlocks',
   'shouldTreatEmbedsAsAttachments'
 ];
 

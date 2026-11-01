@@ -72,6 +72,12 @@ export class PluginSettings {
   public outputFolderPath = '';
 
   /**
+   * The code block languages whose blocks are rendered into the export when
+   * {@link PluginSettings.shouldRenderPluginCodeBlocks} is on.
+   */
+  public renderedCodeBlockLanguages: readonly string[] = ['dataview', 'dataviewjs', 'tasks'];
+
+  /**
    * Whether an attachment arrives already checked. On by default: an embedded image is part of the note.
    */
   public shouldCheckAttachmentsByDefault = true;
@@ -91,6 +97,13 @@ export class PluginSettings {
    * Whether a folder root pulls in the notes of its subfolders as roots too.
    */
   public shouldIncludeSubfolders = true;
+
+  /**
+   * Whether a plugin code block - a `Dataview` or `Tasks` query - is replaced in the exported note by what it
+   * renders, converted to markdown. Off by default: it changes the exported bytes, and a recipient who has
+   * the plugin may want the live query.
+   */
+  public shouldRenderPluginCodeBlocks = false;
 
   /**
    * Whether an embedded markdown note counts as an attachment rather than as a linked note, and so
