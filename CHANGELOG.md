@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 1.1.0
+
+- docs(readme): point bug reports at the Report a bug command
+- docs: add issue-filing instructions for AI agents
+- feat: add a Report a bug command
+- chore(github): give the bug form the field ids bug-report links prefill
+- build(deps): float obsidian-dev-toolkit to ^7.4.0 and override re2js for GHSA-gg6h-894w-4m9c
+- build(deps): bump @mnaoumov/obsidian-lib to ^10.1.0 and adopt its Reference API names
+- build(deps): bump typescript-dev-toolkit to ^5.2.0
+- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
+- chore(deps): update vulnerable development dependencies
+- chore: adopt shared keyword identifier rule
+- refactor: adopt readonly interface members
+- docs(readme): combine related resources and plugin comparisons
+- docs: add a Similar plugins section to the README
+
 ## 1.0.3
 
 - chore(deps): move from `obsidian-dev-utils` to `@mnaoumov/obsidian-lib` 6 and `@mnaoumov/obsidian-dev-toolkit` 5
