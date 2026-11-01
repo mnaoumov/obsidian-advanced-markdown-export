@@ -24,8 +24,12 @@ Open **Settings -> Community plugins -> `Advanced Markdown Export`**. Each optio
 
 ## What gets written
 
+- `exportFormat`
+  - the format the export dialog starts on: `Markdown` (the bundle), `Epub` or `Pdf`. You can still switch it in the dialog for one export. `Pdf` is desktop only; on a phone the dialog starts on `Markdown` instead.
+- `pdfPageSize`
+  - the paper size of a PDF export: `A3`, `A4`, `A5`, `Legal`, `Letter` or `Tabloid`. `Letter` by default, as Obsidian's own **Export to PDF**.
 - `outputFolderPath`
-  - the vault-relative folder bundles are written to **on mobile**, where there is no system directory picker. Leave it empty to be asked to name one each time. On the desktop it is not read at all: choosing Export opens a directory picker, so the bundle can land anywhere, including outside the vault.
+  - the vault-relative folder bundles and EPUB books are written to **on mobile**, where there is no system directory picker. Leave it empty to be asked to name one each time. On the desktop it is not read at all: choosing Export opens a directory picker, so the bundle can land anywhere, including outside the vault.
 - `shouldCreateZip`
   - compress the bundle into a single `.zip` instead of writing a folder.
 - `shouldRenderPluginCodeBlocks`

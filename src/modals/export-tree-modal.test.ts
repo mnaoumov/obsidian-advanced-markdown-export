@@ -1,7 +1,7 @@
 import type {
   ButtonComponent as ButtonComponentOriginal,
-  TAbstractFile as TAbstractFileOriginal,
-  TFile
+  DropdownComponent as DropdownComponentOriginal,
+  TAbstractFile as TAbstractFileOriginal
 } from 'obsidian';
 
 import { setTimeoutAsync } from '@mnaoumov/typescript-lib/async';
@@ -9,6 +9,7 @@ import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   App,
   ButtonComponent,
+  DropdownComponent,
   Modal,
   Setting
 } from 'obsidian-test-mocks/obsidian';
@@ -21,22 +22,30 @@ import {
   vi
 } from 'vitest';
 
+import type { ExportChoice } from './export-tree-modal.ts';
+
 import { DependencyResolver } from '../dependency-resolver.ts';
 import { ExportForest } from '../export-forest.ts';
-import { PluginSettings } from '../plugin-settings.ts';
+import {
+  ExportFormat,
+  PluginSettings
+} from '../plugin-settings.ts';
 import { showExportTreeModal } from './export-tree-modal.ts';
 
 type AddButtonCallback = (button: ButtonComponentOriginal) => unknown;
+type AddDropdownCallback = (dropdown: DropdownComponentOriginal) => unknown;
 
 interface OpenedModal {
   readonly contentEl: HTMLElement;
-  readonly promise: Promise<null | TFile[]>;
+  readonly promise: Promise<ExportChoice | null>;
 }
 
 describe('showExportTreeModal', () => {
   let app: App;
   let capturedButtons: ButtonComponent[];
+  let capturedDropdowns: DropdownComponent[];
   let originalAddButton: Setting['addButton'];
+  let originalAddDropdown: Setting['addDropdown'];
   let originalOpen: () => void;
   let settings: PluginSettings;
 
@@ -57,11 +66,20 @@ describe('showExportTreeModal', () => {
         return callback(button);
       });
     };
+    originalAddDropdown = Setting.prototype.addDropdown;
+    capturedDropdowns = [];
+    Setting.prototype.addDropdown = function addDropdown(this: Setting, callback: AddDropdownCallback): Setting {
+      return originalAddDropdown.call(this, (dropdown: DropdownComponentOriginal) => {
+        capturedDropdowns.push(DropdownComponent.fromOriginalType3__(dropdown));
+        return callback(dropdown);
+      });
+    };
   });
 
   afterEach(() => {
     Modal.prototype.open = originalOpen;
     Setting.prototype.addButton = originalAddButton;
+    Setting.prototype.addDropdown = originalAddDropdown;
   });
 
   function createExampleGraph(): void {
@@ -104,7 +122,8 @@ describe('showExportTreeModal', () => {
 
     const promise = showExportTreeModal({
       app: app.asOriginalType__(),
-      forest
+      forest,
+      initialFormat: ExportFormat.Markdown
     });
 
     if (!contentEl) {
@@ -418,7 +437,26 @@ describe('showExportTreeModal', () => {
       clickButton('Export');
 
       const exported = await promise;
-      expect(exported?.map((file) => file.path)).toEqual(['Example/A.md']);
+      expect(exported?.files.map((file) => file.path)).toEqual(['Example/A.md']);
+      expect(exported?.format).toBe(ExportFormat.Markdown);
+    });
+
+    it('should resolve with the format picked in the dropdown', async () => {
+      createExampleGraph();
+      const { promise } = openModal(createForest(['Example/A.md']));
+      const dropdown = capturedDropdowns[0];
+
+      if (!dropdown) {
+        throw new Error('No format dropdown');
+      }
+
+      expect(dropdown.selectEl.value).toBe(ExportFormat.Markdown);
+      dropdown.selectEl.value = ExportFormat.Epub;
+      dropdown.simulateChange__();
+      clickButton('Export');
+
+      const choice = await promise;
+      expect(choice?.format).toBe(ExportFormat.Epub);
     });
 
     it('should resolve null when Cancel is pressed', async () => {

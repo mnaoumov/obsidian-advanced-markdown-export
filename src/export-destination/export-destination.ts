@@ -10,12 +10,38 @@ import type { ReadonlyPluginSettings } from '../plugin-settings.ts';
  */
 export interface ExportDestination {
   /**
+   * Asks the user where a single-file export - a PDF, an EPUB - should go.
+   *
+   * @param params - The parameters for the destination.
+   * @returns The resolved file, or `null` when the user backed out.
+   */
+  readonly resolveFile: (params: ResolveExportFileParams) => Promise<null | ResolvedExportFile>;
+
+  /**
    * Asks the user where the bundle should go, if the settings do not already say.
    *
    * @param params - The parameters for the destination.
    * @returns The resolved target, or `null` when the user backed out.
    */
   readonly resolveTarget: (params: ResolveExportTargetParams) => Promise<null | ResolvedExportTarget>;
+}
+
+/**
+ * A single file an export is written to.
+ */
+export interface ResolvedExportFile {
+  /**
+   * Where the file is being written, for the completion notice.
+   */
+  readonly description: string;
+
+  /**
+   * Writes the file, creating its folder when it is missing.
+   *
+   * @param data - The file's bytes.
+   * @returns A {@link Promise} that resolves when the file is written.
+   */
+  readonly write: (data: Uint8Array) => Promise<void>;
 }
 
 /**
@@ -31,6 +57,21 @@ export interface ResolvedExportTarget {
    * The target that writes it.
    */
   readonly target: ExportTarget;
+}
+
+/**
+ * The parameters for {@link ExportDestination.resolveFile}.
+ */
+export interface ResolveExportFileParams extends ResolveExportTargetParams {
+  /**
+   * The file's extension, without the dot.
+   */
+  readonly extension: string;
+
+  /**
+   * The format's name, for the save dialog's file type filter.
+   */
+  readonly formatName: string;
 }
 
 /**

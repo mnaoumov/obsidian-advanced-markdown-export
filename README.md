@@ -75,8 +75,11 @@ A copy of the vault ships with every release. You can access it via any of the f
 - Right-click a folder → every note in it becomes a root.
 - Select several files, right-click → **Export with dependencies**.
 - Command palette → **Export active note with its dependencies**.
+- Command palette → **Export the whole vault**.
 
 On the desktop, **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault. On mobile there is no such picker, so it goes to a vault-relative folder instead. Either way, turning on **Create a ZIP archive** gives you a single `.zip` rather than a folder.
+
+The **Format** dropdown under the tree turns the same selection into one document instead of a bundle: an **EPUB book** with a chapter per checked note, or, on the desktop, a **PDF document** with each note starting on a new page. Both are rendered the way Reading view shows them, embedded images included, and a link to another checked note jumps to it inside the document. The **Export format** setting picks which one the dropdown starts on.
 
 Notes built on `Dataview` or `Tasks` queries can travel as their results: turn on **Render plugin code blocks** and each query is replaced in the export by what it renders, converted to markdown, so a reader without the plugin sees the list rather than the query.
 

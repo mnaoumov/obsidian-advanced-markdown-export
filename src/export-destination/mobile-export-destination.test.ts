@@ -117,4 +117,35 @@ describe('MobileExportDestination', () => {
     expect(resolved?.description).toBe('A.zip');
     expect(app.vault.getFileByPath('A.zip')).not.toBeNull();
   });
+
+  describe('a single-file export', () => {
+    it('should write the file under the output folder, creating the folder', async () => {
+      settings.outputFolderPath = 'Exports/New';
+      const resolved = await destination.resolveFile({
+        app: app.asOriginalType__(),
+        bundleName: 'A',
+        extension: 'epub',
+        formatName: 'EPUB',
+        settings
+      });
+      await resolved?.write(new Uint8Array([1, 2]));
+
+      expect(resolved?.description).toBe('Exports/New/A.epub');
+      expect(app.vault.getFileByPath('Exports/New/A.epub')).not.toBeNull();
+    });
+
+    it('should back out when the prompt is cancelled', async () => {
+      vi.mocked(prompt).mockResolvedValue(null);
+
+      expect(
+        await destination.resolveFile({
+          app: app.asOriginalType__(),
+          bundleName: 'A',
+          extension: 'epub',
+          formatName: 'EPUB',
+          settings
+        })
+      ).toBeNull();
+    });
+  });
 });

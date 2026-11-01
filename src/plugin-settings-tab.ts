@@ -4,7 +4,11 @@ import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-sett
 
 import type { PluginSettings } from './plugin-settings.ts';
 
-import { DanglingLinkAction } from './plugin-settings.ts';
+import { getExportFormatOptions } from './export-formats.ts';
+import {
+  DanglingLinkAction,
+  PdfPageSize
+} from './plugin-settings.ts';
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   protected override getSettingDefinitionItems(): SettingDefinitionItem[] {
@@ -21,6 +25,16 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
             ]);
             typedDropdown.addOptions(map);
             this.bind({ propertyName: 'danglingLinkAction', valueComponent: typedDropdown });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: 'The format the export dialog starts on. You can still switch it there for one export. PDF is desktop only.',
+        name: 'Export format',
+        render: (setting) => {
+          setting.addTypedDropdown((typedDropdown) => {
+            typedDropdown.addOptions(getExportFormatOptions());
+            this.bind({ propertyName: 'exportFormat', valueComponent: typedDropdown });
           });
         }
       }),
@@ -57,6 +71,17 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         render: (setting) => {
           setting.addText((text) => {
             this.bind({ propertyName: 'outputFolderPath', valueComponent: text });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: 'The paper size of a PDF export.',
+        name: 'PDF page size',
+        render: (setting) => {
+          setting.addTypedDropdown((typedDropdown) => {
+            const pageSizes = [PdfPageSize.A3, PdfPageSize.A4, PdfPageSize.A5, PdfPageSize.Legal, PdfPageSize.Letter, PdfPageSize.Tabloid];
+            typedDropdown.addOptions(new Map(pageSizes.map((pageSize) => [pageSize, pageSize])));
+            this.bind({ propertyName: 'pdfPageSize', valueComponent: typedDropdown });
           });
         }
       }),

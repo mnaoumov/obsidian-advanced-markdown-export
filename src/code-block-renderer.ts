@@ -11,13 +11,13 @@ import {
  * Obsidian has no render-complete signal, and plugins such as `Dataview` render asynchronously after
  * `MarkdownRenderer.render` resolves, so a quiet period is the only thing that works for every plugin.
  */
-const DEFAULT_SETTLE_IN_MILLISECONDS = 500;
+export const DEFAULT_SETTLE_IN_MILLISECONDS = 500;
 
 /**
  * The most a single block may take. A plugin that keeps mutating its output - a live clock, a spinner -
  * would otherwise never settle, so whatever is there when this expires is taken.
  */
-const DEFAULT_TIMEOUT_IN_MILLISECONDS = 10_000;
+export const DEFAULT_TIMEOUT_IN_MILLISECONDS = 10_000;
 
 /**
  * Elements that are controls rather than content. A rendered Tasks query carries edit and postpone
@@ -176,6 +176,34 @@ export async function renderPluginCodeBlocks(params: RenderPluginCodeBlocksParam
 }
 
 /**
+ * Waits until an element has gone `settleInMilliseconds` without a DOM change, or `timeoutInMilliseconds` in all.
+ *
+ * @param el - The element to watch, with its subtree.
+ * @param settleInMilliseconds - How long it must stay unchanged.
+ * @param timeoutInMilliseconds - The most to wait in all.
+ * @returns A {@link Promise} that resolves once it settled or timed out.
+ */
+export async function waitForDomToSettle(el: HTMLElement, settleInMilliseconds: number, timeoutInMilliseconds: number): Promise<void> {
+  await new Promise<void>((resolve) => {
+    const win = el.win;
+    let settleTimer = win.setTimeout(finish, settleInMilliseconds);
+    const timeoutTimer = win.setTimeout(finish, timeoutInMilliseconds);
+    const observer = new MutationObserver(() => {
+      win.clearTimeout(settleTimer);
+      settleTimer = win.setTimeout(finish, settleInMilliseconds);
+    });
+    observer.observe(el, { attributes: true, characterData: true, childList: true, subtree: true });
+
+    function finish(): void {
+      observer.disconnect();
+      win.clearTimeout(settleTimer);
+      win.clearTimeout(timeoutTimer);
+      resolve();
+    }
+  });
+}
+
+/**
  * Whether the render left nothing but the code block itself, i.e. no plugin claimed the language.
  */
 function isUnprocessedFence(hostEl: HTMLElement): boolean {
@@ -211,24 +239,4 @@ async function renderBlock(params: RenderBlockParams): Promise<null | string> {
     component.unload();
     hostEl.remove();
   }
-}
-
-async function waitForDomToSettle(el: HTMLElement, settleInMilliseconds: number, timeoutInMilliseconds: number): Promise<void> {
-  await new Promise<void>((resolve) => {
-    const win = el.win;
-    let settleTimer = win.setTimeout(finish, settleInMilliseconds);
-    const timeoutTimer = win.setTimeout(finish, timeoutInMilliseconds);
-    const observer = new MutationObserver(() => {
-      win.clearTimeout(settleTimer);
-      settleTimer = win.setTimeout(finish, settleInMilliseconds);
-    });
-    observer.observe(el, { attributes: true, characterData: true, childList: true, subtree: true });
-
-    function finish(): void {
-      observer.disconnect();
-      win.clearTimeout(settleTimer);
-      win.clearTimeout(timeoutTimer);
-      resolve();
-    }
-  });
 }

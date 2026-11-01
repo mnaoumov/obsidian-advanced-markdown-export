@@ -1,6 +1,38 @@
 import type { ReadonlyDeep } from 'type-fest';
 
 /**
+ * What the export produces. Stored by value, so it needs no serializer of its own.
+ */
+export enum ExportFormat {
+  /**
+   * One `.epub` book, a chapter per note, its embedded images packed in. Works on every platform.
+   */
+  Epub = 'Epub',
+
+  /**
+   * The chosen files themselves, structure and links kept - the plugin's original output.
+   */
+  Markdown = 'Markdown',
+
+  /**
+   * One `.pdf` document, a note per page run. Desktop only: it is printed by Electron.
+   */
+  Pdf = 'Pdf'
+}
+
+/**
+ * The paper sizes Electron's `printToPDF` knows by name.
+ */
+export enum PdfPageSize {
+  A3 = 'A3',
+  A4 = 'A4',
+  A5 = 'A5',
+  Legal = 'Legal',
+  Letter = 'Letter',
+  Tabloid = 'Tabloid'
+}
+
+/**
  * The settings as every consumer sees them. `PluginSettingsComponentBase.settings` hands out a deeply
  * readonly view, so taking that type rather than the mutable class keeps a consumer from writing back
  * into the live settings by accident.
@@ -49,6 +81,11 @@ export class PluginSettings {
   public danglingLinkAction: DanglingLinkAction = DanglingLinkAction.KeepAsIs;
 
   /**
+   * The format the tree modal starts on. The modal can switch it for one export.
+   */
+  public exportFormat: ExportFormat = ExportFormat.Markdown;
+
+  /**
    * Folders whose files are never offered as dependencies. Matched against the file's path.
    */
   public ignoredFolders: readonly string[] = [];
@@ -70,6 +107,11 @@ export class PluginSettings {
    * Where bundles are written. Empty means ask every time.
    */
   public outputFolderPath = '';
+
+  /**
+   * The paper size of a PDF export. Letter by default, as Obsidian's own **Export to PDF**.
+   */
+  public pdfPageSize: PdfPageSize = PdfPageSize.Letter;
 
   /**
    * The code block languages whose blocks are rendered into the export when

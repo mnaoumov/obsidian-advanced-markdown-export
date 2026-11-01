@@ -35,10 +35,12 @@ interface BindOptionsExtension {
  */
 const EXPECTED_BOUND_KEYS: (keyof PluginSettings)[] = [
   'danglingLinkAction',
+  'exportFormat',
   'ignoredFolders',
   'ignoredTags',
   'maxTraversalDepth',
   'outputFolderPath',
+  'pdfPageSize',
   'renderedCodeBlockLanguages',
   'shouldCheckAttachmentsByDefault',
   'shouldCheckLinkedNotesByDefault',
