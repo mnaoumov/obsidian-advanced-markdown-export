@@ -11,12 +11,15 @@ import {
 import type { ExportTarget } from '../export-writer.ts';
 import type {
   ExportDestination,
+  ResolvedExportFile,
   ResolvedExportTarget,
+  ResolveExportFileParams,
   ResolveExportTargetParams
 } from './export-destination.ts';
 
 import { ZipExportTarget } from '../export-targets/zip-export-target.ts';
 
+type DesktopExportDestinationResolveFileParams = ResolveExportFileParams;
 type DesktopExportDestinationResolveTargetParams = ResolveExportTargetParams;
 
 /**
@@ -46,6 +49,35 @@ class DesktopFolderExportTarget implements ExportTarget {
  * Electron" test.
  */
 export class DesktopExportDestination implements ExportDestination {
+  /**
+   * A single file gets the system SAVE dialog rather than the directory picker: the user names the file
+   * and confirms an overwrite there, as with Obsidian's own **Export to PDF**.
+   *
+   * @param params - The parameters.
+   * @returns The resolved file, or `null` when the user backed out.
+   */
+  public async resolveFile(params: DesktopExportDestinationResolveFileParams): Promise<null | ResolvedExportFile> {
+    const result = await window.electron.remote.dialog.showSaveDialog({
+      defaultPath: `${params.bundleName}.${params.extension}`,
+      filters: [{ extensions: [params.extension], name: params.formatName }],
+      properties: ['showOverwriteConfirmation'],
+      title: 'Choose where to write the export'
+    });
+    const filePath = result.canceled ? undefined : result.filePath;
+
+    if (!filePath) {
+      return null;
+    }
+
+    return {
+      description: filePath,
+      write: async (data: Uint8Array): Promise<void> => {
+        await mkdir(dirname(filePath), { recursive: true });
+        await writeFile(filePath, data);
+      }
+    };
+  }
+
   public async resolveTarget(params: DesktopExportDestinationResolveTargetParams): Promise<null | ResolvedExportTarget> {
     const result = await window.electron.remote.dialog.showOpenDialog({
       properties: ['openDirectory', 'createDirectory'],

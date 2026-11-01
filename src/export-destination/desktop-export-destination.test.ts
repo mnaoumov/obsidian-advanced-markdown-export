@@ -1,6 +1,7 @@
 import type {
   ElectronModule,
-  ElectronOpenDialogReturnValue
+  ElectronOpenDialogReturnValue,
+  ElectronSaveDialogReturnValue
 } from '@obsidian-typings/obsidian-public-latest';
 
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
@@ -22,7 +23,10 @@ import {
   vi
 } from 'vitest';
 
-import type { ResolvedExportTarget } from './export-destination.ts';
+import type {
+  ResolvedExportFile,
+  ResolvedExportTarget
+} from './export-destination.ts';
 
 import { PluginSettings } from '../plugin-settings.ts';
 import { DesktopExportDestination } from './desktop-export-destination.ts';
@@ -129,5 +133,49 @@ describe('DesktopExportDestination', () => {
 
     const unzipped = unzipSync(await readFile(archivePath));
     expect(Object.keys(unzipped)).toEqual(['Example/A.md']);
+  });
+
+  describe('a single-file export', () => {
+    let showSaveDialogMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      showSaveDialogMock = vi.fn().mockResolvedValue(
+        {
+          canceled: false,
+          filePath: join(outputDirectoryPath, 'Nested', 'A.pdf')
+        } satisfies ElectronSaveDialogReturnValue
+      );
+      setElectron(castTo<ElectronModule>({ remote: { dialog: { showSaveDialog: showSaveDialogMock } } }));
+    });
+
+    async function resolveFile(): Promise<null | ResolvedExportFile> {
+      return destination.resolveFile({
+        app: app.asOriginalType__(),
+        bundleName: 'A',
+        extension: 'pdf',
+        formatName: 'PDF',
+        settings
+      });
+    }
+
+    it('should ask through the save dialog and write the file where it says, creating its folder', async () => {
+      const resolved = await resolveFile();
+      await resolved?.write(new Uint8Array([37, 80]));
+
+      expect(showSaveDialogMock).toHaveBeenCalledWith(expect.objectContaining({
+        defaultPath: 'A.pdf',
+        filters: [{ extensions: ['pdf'], name: 'PDF' }]
+      }));
+      expect(resolved?.description).toBe(join(outputDirectoryPath, 'Nested', 'A.pdf'));
+      expect(await readFile(join(outputDirectoryPath, 'Nested', 'A.pdf'))).toEqual(Buffer.from([37, 80]));
+    });
+
+    it('should back out when the save dialog is cancelled or names no file', async () => {
+      showSaveDialogMock.mockResolvedValue({ canceled: true, filePath: '' } satisfies ElectronSaveDialogReturnValue);
+      expect(await resolveFile()).toBeNull();
+
+      showSaveDialogMock.mockResolvedValue({ canceled: false, filePath: '' } satisfies ElectronSaveDialogReturnValue);
+      expect(await resolveFile()).toBeNull();
+    });
   });
 });

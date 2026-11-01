@@ -29,6 +29,7 @@ import {
   vi
 } from 'vitest';
 
+import type { RenderedNotes } from './document-export/note-renderer.ts';
 import type {
   ExportDestination,
   ResolvedExportTarget
@@ -37,9 +38,16 @@ import type { ExportForest } from './export-forest.ts';
 import type { ExportTarget } from './export-writer.ts';
 
 import { AdvancedMarkdownExportComponent } from './advanced-markdown-export-component.ts';
+import { buildEpubFromNotes } from './document-export/epub-export.ts';
+import { renderNotes } from './document-export/note-renderer.ts';
+import { printNotesToPdf } from './document-export/pdf-export.ts';
 import { createExportDestination } from './export-destination/export-destination.ts';
 import { showExportTreeModal } from './modals/export-tree-modal.ts';
-import { PluginSettings } from './plugin-settings.ts';
+import {
+  ExportFormat,
+  PdfPageSize,
+  PluginSettings
+} from './plugin-settings.ts';
 
 const MACROTASK_TURNS_TO_SETTLE_EXPORT = 3;
 const MENU_ITEM_TITLE = 'Export with dependencies';
@@ -51,11 +59,22 @@ const MENU_ITEM_TITLE = 'Export with dependencies';
 vi.mock('./modals/export-tree-modal.ts', () => ({ showExportTreeModal: vi.fn() }));
 vi.mock('./export-destination/export-destination.ts', () => ({ createExportDestination: vi.fn() }));
 
+/*
+ * The document formats are unit-tested in their own modules; here only the hand-off to them is checked.
+ */
+vi.mock('./document-export/note-renderer.ts', () => ({ renderNotes: vi.fn() }));
+vi.mock('./document-export/epub-export.ts', () => ({
+  buildEpubFromNotes: vi.fn(),
+  getChapterFileName: (anchorId: string): string => `${anchorId}.xhtml`
+}));
+vi.mock('./document-export/pdf-export.ts', () => ({ printNotesToPdf: vi.fn() }));
+
 describe('AdvancedMarkdownExportComponent', () => {
   let app: App;
   let commands: Command[];
   let fileMenuHandlers: FileMenuEventHandler[];
   let filesMenuHandlers: FilesMenuEventHandler[];
+  let resolveFileMock: ExportDestination['resolveFile'];
   let resolveTargetMock: ExportDestination['resolveTarget'];
   let settings: PluginSettings;
   let showNoticeMock: PluginNoticeComponent['showNotice'];
@@ -87,7 +106,17 @@ describe('AdvancedMarkdownExportComponent', () => {
         target
       } satisfies ResolvedExportTarget
     );
-    vi.mocked(createExportDestination).mockResolvedValue({ resolveTarget: resolveTargetMock });
+    resolveFileMock = vi.fn<ExportDestination['resolveFile']>().mockResolvedValue({
+      description: 'Book',
+      write: (data) => {
+        writtenFiles.set('Book', data);
+        return noopAsync();
+      }
+    });
+    vi.mocked(createExportDestination).mockResolvedValue({
+      resolveFile: resolveFileMock,
+      resolveTarget: resolveTargetMock
+    });
   });
 
   function createComponent(): AdvancedMarkdownExportComponent {
@@ -142,8 +171,13 @@ describe('AdvancedMarkdownExportComponent', () => {
    * The modal is mocked, so accepting means resolving with what the real one would have: the export set
    * read off the forest it was handed.
    */
-  function acceptModal(): void {
-    vi.mocked(showExportTreeModal).mockImplementation((params) => Promise.resolve(params.forest.getExportFiles()));
+  function acceptModal(format = ExportFormat.Markdown): void {
+    vi.mocked(showExportTreeModal).mockImplementation((params) =>
+      Promise.resolve({
+        files: params.forest.getExportFiles(),
+        format
+      })
+    );
   }
 
   function getMenuItemTitles(menu: Menu): (DocumentFragment | string)[] {
@@ -164,10 +198,9 @@ describe('AdvancedMarkdownExportComponent', () => {
     return forest.getRootIds().map((rootId) => forest.getNode(rootId).path);
   }
 
-  it('should register one command and both menu handlers', () => {
+  it('should register both commands and both menu handlers', () => {
     createComponent();
-    expect(commands).toHaveLength(1);
-    expect(commands[0]?.id).toBe('export-active-file');
+    expect(commands.map((command) => command.id)).toEqual(['export-active-file', 'export-vault']);
     expect(fileMenuHandlers).toHaveLength(1);
     expect(filesMenuHandlers).toHaveLength(1);
   });
@@ -405,6 +438,91 @@ describe('AdvancedMarkdownExportComponent', () => {
       expect(commands[0]?.checkCallback?.(false)).toBe(true);
       await flushExport();
       expect(getStartedRootPaths()).toEqual(['A.md']);
+    });
+  });
+
+  describe('the whole-vault command', () => {
+    it('should start the export at the vault root and name the bundle after the vault', async () => {
+      acceptModal();
+      createComponent();
+      app.vault.createSync__('A.md', '# A');
+      app.vault.createFolderSync__('Example');
+      app.vault.createSync__('Example/B.md', '# B');
+
+      commands[1]?.callback?.();
+      await flushExport();
+
+      expect(getStartedRootPaths()).toEqual(['A.md', 'Example/B.md']);
+      expect(vi.mocked(resolveTargetMock).mock.calls[0]?.[0].bundleName).toBe(app.vault.getName());
+    });
+  });
+
+  describe('the document formats', () => {
+    let disposeMock: RenderedNotes['dispose'];
+
+    beforeEach(() => {
+      disposeMock = vi.fn();
+      vi.mocked(renderNotes).mockResolvedValue({ dispose: disposeMock, notes: [] });
+      vi.mocked(buildEpubFromNotes).mockResolvedValue(new Uint8Array([1]));
+      vi.mocked(printNotesToPdf).mockResolvedValue(new Uint8Array([2]));
+    });
+
+    async function startExportOfA(): Promise<void> {
+      createComponent();
+      app.vault.createSync__('A.md', '# A');
+      const menu = createMenu();
+      fileMenuHandlers[0]?.(castTo<MenuOriginal>(menu), createNote('A.md'), 'file-explorer');
+      menu.menuItems__[0]?.onClick__?.(castTo<MouseEvent>({}));
+      await flushExport();
+    }
+
+    it('should start the modal on the configured format', async () => {
+      settings.exportFormat = ExportFormat.Epub;
+      await startExportOfA();
+
+      expect(vi.mocked(showExportTreeModal).mock.calls[0]?.[0].initialFormat).toBe(ExportFormat.Epub);
+    });
+
+    it('should write an EPUB whose links point at chapter files', async () => {
+      acceptModal(ExportFormat.Epub);
+      await startExportOfA();
+
+      expect(vi.mocked(resolveFileMock).mock.calls[0]?.[0]).toMatchObject({ bundleName: 'A', extension: 'epub', formatName: 'EPUB' });
+      expect(vi.mocked(renderNotes).mock.calls[0]?.[0].noteHrefResolver('note-1')).toBe('note-1.xhtml');
+      expect(vi.mocked(buildEpubFromNotes).mock.calls[0]?.[0].title).toBe('A');
+      expect(writtenFiles.get('Book')).toEqual(new Uint8Array([1]));
+      expect(disposeMock).toHaveBeenCalled();
+      expect(showNoticeMock).toHaveBeenCalledWith('Rendering 1 note to EPUB...');
+      expect(showNoticeMock).toHaveBeenCalledWith('Exported 1 note to Book');
+    });
+
+    it('should write a PDF on the configured page size, its links pointing inside the document', async () => {
+      acceptModal(ExportFormat.Pdf);
+      settings.pdfPageSize = PdfPageSize.A4;
+      await startExportOfA();
+
+      expect(vi.mocked(resolveFileMock).mock.calls[0]?.[0]).toMatchObject({ extension: 'pdf', formatName: 'PDF' });
+      expect(vi.mocked(renderNotes).mock.calls[0]?.[0].noteHrefResolver('note-1')).toBe('#note-1');
+      expect(vi.mocked(printNotesToPdf).mock.calls[0]?.[0]).toMatchObject({ pageSize: 'A4', title: 'A' });
+      expect(writtenFiles.get('Book')).toEqual(new Uint8Array([2]));
+      expect(disposeMock).toHaveBeenCalled();
+    });
+
+    it('should say so when no note is checked', async () => {
+      vi.mocked(showExportTreeModal).mockResolvedValue({ files: [], format: ExportFormat.Epub });
+      await startExportOfA();
+
+      expect(resolveFileMock).not.toHaveBeenCalled();
+      expect(showNoticeMock).toHaveBeenCalledWith('Only notes can be exported to EPUB, and no note is checked.');
+    });
+
+    it('should render nothing when the save dialog is cancelled', async () => {
+      acceptModal(ExportFormat.Epub);
+      vi.mocked(resolveFileMock).mockResolvedValue(null);
+      await startExportOfA();
+
+      expect(renderNotes).not.toHaveBeenCalled();
+      expect(writtenFiles.size).toBe(0);
     });
   });
 });

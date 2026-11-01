@@ -6,6 +6,7 @@ An export starts from a set of **roots** and grows downwards through their depen
 - Right-click a folder — every note inside it becomes a root of its own.
 - Select several files, then right-click — each selected file is a root.
 - Run the **Export active note with its dependencies** command.
+- Run the **Export the whole vault** command — every note in the vault becomes a root.
 
 ```code-button
 ---
@@ -71,8 +72,21 @@ Turn on **Render plugin code blocks** and each such block is replaced in the exp
 
 It is off by default, because a recipient who has the plugin may want the live query rather than a snapshot. Only blocks at the start of a line are rendered: a query inside a list, a quote or a callout stays as written. A block whose plugin is not installed, or that renders nothing, also stays as written.
 
+## One document instead of a bundle: EPUB and PDF
+
+The **Format** dropdown under the tree decides what the selection becomes. **Markdown files** is the bundle described above. The other two turn the checked notes into a single document, rendered the way Reading view shows them:
+
+- **EPUB book** — a chapter per note, in tree order, with a table of contents. Images the notes embed are packed into the book. Works on every platform.
+- **PDF document** — each note starts on a new page, printed in the light theme with your theme and snippets applied, on the **PDF page size** you chose. Desktop only, because it is Electron that prints it; on a phone the dropdown does not offer it.
+
+Only notes become chapters or pages. An attachment travels only as what a note embeds, so ticking an image on its own adds nothing.
+
+Links are settled for a document that has no vault around it. A link to another checked note jumps to that note inside the document. A link or embed whose target you left out follows **Dangling links**: kept as it is (a link then opens the note in Obsidian through an `obsidian://` link, and an embed stays rendered), replaced by its text, or removed. A link that points at nothing becomes its text.
+
+`Dataview` and `Tasks` blocks render here whatever **Render plugin code blocks** says, because the document is what Reading view shows.
+
 ## Where it goes
 
-On the desktop, choosing **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault.
+On the desktop, choosing **Export** opens a system directory picker, so the bundle can land anywhere — including outside your vault. An EPUB or a PDF gets the system save dialog instead, named after what you exported.
 
-On mobile there is no such picker, so the bundle goes to a vault-relative folder instead: the **Output folder** setting if you have set one, otherwise a folder you are asked to name once per export. Turn on **Create a ZIP archive** and you get a single `.zip` instead of a folder, on either platform.
+On mobile there is no such picker, so the bundle goes to a vault-relative folder instead: the **Output folder** setting if you have set one, otherwise a folder you are asked to name once per export. Turn on **Create a ZIP archive** and you get a single `.zip` instead of a folder, on either platform. An EPUB lands in the same place, as `<name>.epub`.

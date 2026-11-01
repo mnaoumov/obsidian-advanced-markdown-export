@@ -4,11 +4,13 @@ import type { MenuEventRegistrar } from '@mnaoumov/obsidian-lib/menu-event-regis
 import type {
   App,
   Menu,
-  TAbstractFile
+  TAbstractFile,
+  TFile
 } from 'obsidian';
 
 import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import {
+  isMarkdownFile,
   isNote,
   trimMarkdownExtension
 } from '@mnaoumov/obsidian-lib/file-system';
@@ -16,13 +18,22 @@ import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import { basename } from '@mnaoumov/typescript-lib/path';
 import { TFolder } from 'obsidian';
 
+import type { RenderedNote } from './document-export/note-renderer.ts';
+import type { ExportDestination } from './export-destination/export-destination.ts';
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 
 import { DependencyResolver } from './dependency-resolver.ts';
+import {
+  buildEpubFromNotes,
+  getChapterFileName
+} from './document-export/epub-export.ts';
+import { renderNotes } from './document-export/note-renderer.ts';
 import { createExportDestination } from './export-destination/export-destination.ts';
 import { ExportForest } from './export-forest.ts';
+import { resolveAvailableExportFormat } from './export-formats.ts';
 import { exportBundle } from './export-writer.ts';
 import { showExportTreeModal } from './modals/export-tree-modal.ts';
+import { ExportFormat } from './plugin-settings.ts';
 
 /**
  * A single root is the spec's worked example, and its immediate dependencies are what the user came to
@@ -37,6 +48,14 @@ interface AdvancedMarkdownExportComponentConstructorParams {
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly settingsProvider: SettingsProvider;
+}
+
+interface AdvancedMarkdownExportComponentExportDocumentParams {
+  readonly bundleName: string;
+  readonly destination: ExportDestination;
+  readonly files: readonly TFile[];
+  readonly format: ExportFormat.Epub | ExportFormat.Pdf;
+  readonly settings: ReadonlyPluginSettings;
 }
 
 type SettingsProvider = () => ReadonlyPluginSettings;
@@ -69,6 +88,14 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
       checkCallback: this.exportActiveFile.bind(this),
       id: 'export-active-file',
       name: 'Export active note with its dependencies'
+    });
+
+    this.commandRegistrar.addCommand({
+      callback: () => {
+        this.startExport([this.app.vault.getRoot()]);
+      },
+      id: 'export-vault',
+      name: 'Export the whole vault'
     });
 
     this.registerDisposable(this.menuEventRegistrar.registerFileMenuEventHandler(this.handleFileMenu.bind(this)));
@@ -109,6 +136,57 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
     }
 
     return true;
+  }
+
+  /**
+   * Writes the chosen notes as one document. Only notes become chapters or pages: an attachment travels
+   * only as what a note embeds.
+   */
+  private async exportDocument(params: AdvancedMarkdownExportComponentExportDocumentParams): Promise<void> {
+    const isPdf = params.format === ExportFormat.Pdf;
+    const formatName = isPdf ? 'PDF' : 'EPUB';
+    const noteCount = params.files.filter((file) => isMarkdownFile(file)).length;
+
+    if (noteCount === 0) {
+      this.pluginNoticeComponent.showNotice(`Only notes can be exported to ${formatName}, and no note is checked.`);
+      return;
+    }
+
+    const resolvedFile = await params.destination.resolveFile({
+      app: this.app,
+      bundleName: params.bundleName,
+      extension: isPdf ? 'pdf' : 'epub',
+      formatName,
+      settings: params.settings
+    });
+
+    if (!resolvedFile) {
+      return;
+    }
+
+    this.pluginNoticeComponent.showNotice(`Rendering ${formatCount(noteCount, 'note')} to ${formatName}...`);
+    const renderedNotes = await renderNotes({
+      app: this.app,
+      files: params.files,
+      noteHrefResolver: isPdf ? (anchorId): string => `#${anchorId}` : getChapterFileName,
+      settings: params.settings
+    });
+
+    try {
+      const data = isPdf
+        ? await printPdf(renderedNotes.notes, params)
+        : await buildEpubFromNotes({
+          app: this.app,
+          modified: new Date(),
+          notes: renderedNotes.notes,
+          title: params.bundleName
+        });
+      await resolvedFile.write(data);
+    } finally {
+      renderedNotes.dispose();
+    }
+
+    this.pluginNoticeComponent.showNotice(`Exported ${formatCount(noteCount, 'note')} to ${resolvedFile.description}`);
   }
 
   private handleFileMenu(menu: Menu, abstractFile: TAbstractFile): void {
@@ -154,19 +232,33 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
       }
     }
 
-    const files = await showExportTreeModal({
+    const choice = await showExportTreeModal({
       app: this.app,
-      forest
+      forest,
+      initialFormat: resolveAvailableExportFormat(settings.exportFormat)
     });
 
-    if (files === null) {
+    if (choice === null) {
       return;
     }
 
     const destination = await createExportDestination();
+    const bundleName = getBundleName(this.app, roots);
+
+    if (choice.format !== ExportFormat.Markdown) {
+      await this.exportDocument({
+        bundleName,
+        destination,
+        files: choice.files,
+        format: choice.format,
+        settings
+      });
+      return;
+    }
+
     const resolvedTarget = await destination.resolveTarget({
       app: this.app,
-      bundleName: getBundleName(roots),
+      bundleName,
       settings
     });
 
@@ -176,30 +268,51 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
 
     await exportBundle({
       app: this.app,
-      files,
+      files: choice.files,
       settings,
       target: resolvedTarget.target
     });
     this.pluginNoticeComponent.showNotice(
-      `Exported ${String(files.length)} ${files.length === 1 ? 'file' : 'files'} to ${resolvedTarget.description}`
+      `Exported ${formatCount(choice.files.length, 'file')} to ${resolvedTarget.description}`
     );
   }
 }
 
+function formatCount(count: number, noun: string): string {
+  return `${String(count)} ${noun}${count === 1 ? '' : 's'}`;
+}
+
 /**
  * Names the bundle after what the user actually picked, so a single note or folder produces an obvious
- * name and a mixed multi-selection falls back to a neutral one.
+ * name and a mixed multi-selection falls back to a neutral one. The vault root is named after the vault.
  */
-function getBundleName(roots: readonly TAbstractFile[]): string {
+function getBundleName(app: App, roots: readonly TAbstractFile[]): string {
   const [firstRoot] = roots;
 
   if (roots.length !== 1 || !firstRoot) {
     return 'Export';
   }
 
+  if (firstRoot instanceof TFolder) {
+    return firstRoot.isRoot() ? app.vault.getName() : firstRoot.name;
+  }
+
   /*
    * The basename, not the trimmed path: the user picked a directory, so a note nested three folders
    * deep must still produce one bundle folder next to the others, not a chain of empty parents.
    */
-  return firstRoot instanceof TFolder ? firstRoot.name : basename(trimMarkdownExtension(firstRoot));
+  return basename(trimMarkdownExtension(firstRoot));
+}
+
+/**
+ * Prints through Electron, which only the desktop app has - the modal never offers PDF anywhere else. The
+ * module is imported dynamically all the same, so the mobile bundle never evaluates it.
+ */
+async function printPdf(notes: readonly RenderedNote[], params: AdvancedMarkdownExportComponentExportDocumentParams): Promise<Uint8Array> {
+  const pdfModule = await import('./document-export/pdf-export.ts');
+  return pdfModule.printNotesToPdf({
+    notes,
+    pageSize: params.settings.pdfPageSize,
+    title: params.bundleName
+  });
 }

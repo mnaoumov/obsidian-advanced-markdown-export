@@ -19,8 +19,28 @@ import type {
   ExportForest,
   NodeId
 } from '../export-forest.ts';
+import type { ExportFormat } from '../plugin-settings.ts';
 
 import { DependencyKind } from '../dependency-resolver.ts';
+import {
+  getAvailableExportFormatOptions,
+  parseExportFormat
+} from '../export-formats.ts';
+
+/**
+ * What the user accepted: the files, and the format to write them in.
+ */
+export interface ExportChoice {
+  /**
+   * The files to export, in tree order.
+   */
+  readonly files: TFile[];
+
+  /**
+   * The format to export them in.
+   */
+  readonly format: ExportFormat;
+}
 
 /**
  * The parameters for {@link showExportTreeModal}.
@@ -35,10 +55,15 @@ export interface ShowExportTreeModalParams {
    * The selection model the tree edits in place.
    */
   readonly forest: ExportForest;
+
+  /**
+   * The format the dropdown starts on. Must be one this platform can produce.
+   */
+  readonly initialFormat: ExportFormat;
 }
 
 interface ExportTreeModalConstructorParams extends ShowExportTreeModalParams {
-  readonly promiseResolve: PromiseResolve<null | TFile[]>;
+  readonly promiseResolve: PromiseResolve<ExportChoice | null>;
 }
 
 interface RenderedRow {
@@ -70,8 +95,9 @@ const KIND_ICONS: Record<DependencyKind, string> = {
 class ExportTreeModal extends Modal {
   private exportButton: ButtonComponent | null = null;
   private readonly forest: ExportForest;
+  private format: ExportFormat;
   private hasAccepted = false;
-  private readonly promiseResolve: PromiseResolve<null | TFile[]>;
+  private readonly promiseResolve: PromiseResolve<ExportChoice | null>;
   private readonly rowsById = new Map<NodeId, RenderedRow>();
   private readonly summaryEl: HTMLElement;
   private readonly treeEl: HTMLElement;
@@ -79,6 +105,7 @@ class ExportTreeModal extends Modal {
   public constructor(params: ExportTreeModalConstructorParams) {
     super(params.app);
     this.forest = params.forest;
+    this.format = params.initialFormat;
     this.promiseResolve = params.promiseResolve;
 
     /*
@@ -94,7 +121,7 @@ class ExportTreeModal extends Modal {
 
   public override onClose(): void {
     super.onClose();
-    this.promiseResolve(this.hasAccepted ? this.forest.getExportFiles() : null);
+    this.promiseResolve(this.hasAccepted ? { files: this.forest.getExportFiles(), format: this.format } : null);
   }
 
   public override onOpen(): void {
@@ -146,6 +173,15 @@ class ExportTreeModal extends Modal {
 
   private renderFooter(): void {
     new Setting(this.contentEl)
+      .setName('Format')
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOptions(Object.fromEntries(getAvailableExportFormatOptions()))
+          .setValue(this.format)
+          .onChange((value) => {
+            this.format = parseExportFormat(value);
+          });
+      })
       .addButton((button) => {
         this.exportButton = button;
         button
@@ -367,10 +403,11 @@ class ExportTreeModal extends Modal {
  * accepted, so the caller never has to know that.
  *
  * @param params - The parameters for the modal.
- * @returns A {@link Promise} that resolves to the files to export, or to `null` when the user cancelled.
+ * @returns A {@link Promise} that resolves to the files and format to export, or to `null` when the user
+ * cancelled.
  */
-export async function showExportTreeModal(params: ShowExportTreeModalParams): Promise<null | TFile[]> {
-  return showModal<null | TFile[]>((promiseResolve) =>
+export async function showExportTreeModal(params: ShowExportTreeModalParams): Promise<ExportChoice | null> {
+  return showModal<ExportChoice | null>((promiseResolve) =>
     new ExportTreeModal({
       ...params,
       promiseResolve

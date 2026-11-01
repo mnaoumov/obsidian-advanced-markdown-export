@@ -94,3 +94,10 @@
   top: 0;
   width: 800px;
 }
+
+/* A PDF export prints its notes one after another; each starts on a new page. */
+@media print {
+  .advanced-markdown-export-document-note + .advanced-markdown-export-document-note {
+    break-before: page;
+  }
+}

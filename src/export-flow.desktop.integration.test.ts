@@ -20,6 +20,10 @@
 
 import type { MenuItem } from 'obsidian';
 
+import {
+  strFromU8,
+  unzipSync
+} from 'fflate';
 import { evalInObsidian } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
@@ -50,6 +54,14 @@ const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
  */
 const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
+/*
+ * Under the transport's ~30s per-closure cap, not at it. The document scenario waits three times: the
+ * metadata cache and the tree are as quick as above, but the third wait spans rendering two notes - each
+ * held for the renderer's 500ms quiet period - and, for a PDF, the print window's layout delay and the
+ * print itself. 8000 apiece is 24s, with the closure's own work in the rest.
+ */
+const DOCUMENT_WAIT_TIMEOUT_IN_MILLISECONDS = 8000;
+
 /**
  * What the shadowed directory dialog answers with. Declared here rather than imported from
  * `obsidian-typings` so the callback stays self-contained when it is serialized into Obsidian.
@@ -57,6 +69,11 @@ const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 interface DirectoryDialogResult {
   readonly canceled: boolean;
   readonly filePaths: string[];
+}
+
+interface DocumentExportResult {
+  readonly base64: string;
+  readonly defaultPath: string;
 }
 
 interface EntryPointsResult {
@@ -70,6 +87,21 @@ interface ExportResult {
   readonly exportedNoteContent: string;
   readonly exportedPaths: string[];
   readonly rowPaths: string[];
+}
+
+/**
+ * The part of the save dialog's options the plugin passes and the shadow reads.
+ */
+interface SaveDialogOptions {
+  readonly defaultPath?: string;
+}
+
+/**
+ * What the shadowed save dialog answers with.
+ */
+interface SaveDialogResult {
+  readonly canceled: boolean;
+  readonly filePath: string;
 }
 
 describe('Export flow', () => {
@@ -98,7 +130,131 @@ describe('Export flow', () => {
     expect(result.exportedNoteContent).toContain('![[Example/Attachments/A1.png]]');
     expect(result.exportedNoteContent).toContain('[[Example/B.md]]');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
+
+  it('should write an EPUB with a chapter per note, the image packed and the link between them kept', async () => {
+    const result = await runDocumentExportScenario('Epub', 'epub');
+    const entries = unzipSync(Buffer.from(result.base64, 'base64'));
+    const chapterA = strFromU8(entries['OEBPS/text/note-1.xhtml'] ?? new Uint8Array());
+
+    expect(result.defaultPath).toBe('A.epub');
+    expect(Object.keys(entries)[0]).toBe('mimetype');
+    expect(Object.keys(entries)).toEqual(expect.arrayContaining(['OEBPS/text/note-1.xhtml', 'OEBPS/text/note-2.xhtml', 'OEBPS/text/media/media-1.png']));
+    expect(chapterA).toContain('src="media/media-1.png"');
+    expect(chapterA).toContain('href="note-2.xhtml"');
+    expect(chapterA).toContain('Alpha body');
+  }, TEST_TIMEOUT_IN_MILLISECONDS);
+
+  it('should print a PDF with each note starting on its own page', async () => {
+    const result = await runDocumentExportScenario('Pdf', 'pdf');
+    const pdf = Buffer.from(result.base64, 'base64').toString('latin1');
+
+    expect(result.defaultPath).toBe('A.pdf');
+    expect(pdf.startsWith('%PDF-')).toBe(true);
+    expect(pdf.match(/\/Type\s*\/Page\b/g)?.length).toBe(2);
+  }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
+
+/**
+ * Exports `A` and `B` as one document through the real menu, modal and renderer, with only the OS save
+ * dialog shadowed, and hands the written file back as base64 so it can be taken apart in Node.
+ */
+async function runDocumentExportScenario(format: string, extension: string): Promise<DocumentExportResult> {
+  const vaultPath = getTemporaryVault().path;
+
+  return evalInObsidian({
+    async callback({
+      app,
+      extension: fileExtension,
+      format: formatValue,
+      lib: { waitUntil },
+      menuItemTitle,
+      obsidianModule,
+      timeoutInMilliseconds,
+      vaultDirectoryPath
+    }): Promise<DocumentExportResult> {
+      const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
+      const folderPath = `document-export-${stamp}`;
+      const outputFileName = `document-export-${stamp}.${fileExtension}`;
+      const dialog = window.electron.remote.dialog;
+      const originalShowSaveDialog = dialog.showSaveDialog.bind(dialog);
+      let defaultPath = '';
+      // Assigned through `Object.assign` because the real method is overloaded, and this stand-in takes only the options form the plugin calls.
+      Object.assign(dialog, {
+        showSaveDialog: (options: SaveDialogOptions): Promise<SaveDialogResult> => {
+          defaultPath = options.defaultPath ?? '';
+          return Promise.resolve({ canceled: false, filePath: `${vaultDirectoryPath}/${outputFileName}` });
+        }
+      });
+
+      try {
+        await app.vault.createFolder(folderPath);
+        await app.vault.createBinary(`${folderPath}/A1.png`, new Uint8Array([137, 80, 78, 71]).buffer);
+        await app.vault.create(`${folderPath}/B.md`, '# Beta\n\nBeta body\n');
+        const noteA = await app.vault.create(`${folderPath}/A.md`, `Alpha body\n\n![[${folderPath}/A1.png]]\n\n[[${folderPath}/B.md]]\n`);
+
+        await waitUntil({
+          message: 'the metadata cache never picked up the fixture note',
+          predicate: () => (app.metadataCache.getFileCache(noteA)?.links?.length ?? 0) > 0,
+          timeoutInMilliseconds
+        });
+
+        const menu = new obsidianModule.Menu();
+        app.workspace.trigger('file-menu', menu, noteA, 'file-explorer-context-menu');
+        menu.items.find((item): item is MenuItem => 'titleEl' in item && item.titleEl.textContent === menuItemTitle)?.callback?.();
+
+        await waitUntil({
+          message: 'the export tree never showed the linked note',
+          predicate: () => document.querySelectorAll('.advanced-markdown-export-tree-modal .advanced-markdown-export-path').length === 3,
+          timeoutInMilliseconds
+        });
+
+        const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
+        const noteBCheckbox = [...modalEl?.querySelectorAll('.tree-item-self') ?? []]
+          .find((selfEl) => selfEl.querySelector('.advanced-markdown-export-path')?.textContent === `${folderPath}/B.md`)
+          ?.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox');
+        if (noteBCheckbox) {
+          noteBCheckbox.checked = true;
+          noteBCheckbox.dispatchEvent(new Event('change'));
+        }
+
+        const formatSelect = modalEl?.querySelector('select');
+        if (formatSelect) {
+          formatSelect.value = formatValue;
+          formatSelect.dispatchEvent(new Event('change'));
+        }
+
+        [...modalEl?.querySelectorAll('button') ?? []].find((button) => button.textContent === 'Export')?.click();
+
+        await waitUntil({
+          message: 'the document export never reported that it had finished',
+          predicate: () => [...document.querySelectorAll('.notice')].some((noticeEl) => noticeEl.textContent.includes(outputFileName)),
+          timeoutInMilliseconds
+        });
+
+        return {
+          base64: obsidianModule.arrayBufferToBase64(await app.vault.adapter.readBinary(outputFileName)),
+          defaultPath
+        };
+      } finally {
+        dialog.showSaveDialog = originalShowSaveDialog;
+
+        for (const path of [folderPath, outputFileName]) {
+          if (await app.vault.adapter.exists(path)) {
+            await (path === folderPath ? app.vault.adapter.rmdir(path, true) : app.vault.adapter.remove(path));
+          }
+        }
+      }
+    },
+    input: {
+      extension,
+      format,
+      menuItemTitle: MENU_ITEM_TITLE,
+      timeoutInMilliseconds: DOCUMENT_WAIT_TIMEOUT_IN_MILLISECONDS,
+      vaultDirectoryPath: vaultPath
+    },
+    vaultPath
+  });
+}
 
 async function runEntryPointsScenario(): Promise<EntryPointsResult> {
   return evalInObsidian({
