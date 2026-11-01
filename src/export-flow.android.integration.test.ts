@@ -34,7 +34,10 @@
 
 import type { MenuItem } from 'obsidian';
 
-import { unzipSync } from 'fflate';
+import {
+  strFromU8,
+  unzipSync
+} from 'fflate';
 import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -87,6 +90,10 @@ interface SettingsEditablePlugin {
   readonly pluginSettingsComponent: EditableSettingsComponent;
 }
 
+/**
+ * The Format dropdown's value for an EPUB book, `ExportFormat.Epub`.
+ */
+const EPUB_FORMAT = 'Epub';
 const MENU_ITEM_TITLE = 'Export with dependencies';
 const PLUGIN_ID = 'advanced-markdown-export';
 
@@ -233,6 +240,51 @@ describe('Export flow on Android', () => {
 
       const archive = unzipSync(await readVaultBinary(archivePath));
       expect(sorted(Object.keys(archive))).toStrictEqual(sorted(EXPECTED_BUNDLE_PATHS));
+    } finally {
+      await setSettings({ outputFolderPath: '', shouldCreateZip: false });
+      await removeFromVault([outputFolderPath]);
+    }
+  }, TEST_TIMEOUT_IN_MILLISECONDS);
+
+  /*
+   * The EPUB path on a phone: `note-renderer.ts` and `epub-export.ts` loaded on the device, every note
+   * rendered there, and the book written through `MobileExportDestination.resolveFile`. Nothing else runs
+   * that chain on a mobile build - the desktop suite writes through `node:fs`, and the unit suite mocks the
+   * renderer's host - so a module in it that throws as it loads on a phone would be the fflate defect over
+   * again, with every other suite green.
+   *
+   * Into a configured output folder the vault has not got, so the single-file writer has to create its
+   * parent too, as the ZIP sink does in the case above.
+   */
+  it('should write an EPUB book into a configured output folder', async () => {
+    const outputFolderPath = `export-mobile-epub-${stamp()}`;
+    const bookPath = `${outputFolderPath}/A.epub`;
+
+    try {
+      await setSettings({ outputFolderPath, shouldCreateZip: false });
+      await openExportTree();
+      await selectFormat(EPUB_FORMAT);
+      await pressExport();
+
+      expect(await waitForExportDestination()).toBe(bookPath);
+
+      /*
+       * Unzipped in NODE, so the book is proven a readable container rather than merely a file of the
+       * right name: `mimetype` first, the one ticked note as a chapter, and both of its embedded images
+       * packed beside it.
+       */
+      const book = unzipSync(await readVaultBinary(bookPath));
+      expect(Object.keys(book)[0]).toBe('mimetype');
+      expect(Object.keys(book)).toEqual(expect.arrayContaining([
+        'OEBPS/content.opf',
+        'OEBPS/text/note-1.xhtml',
+        'OEBPS/text/media/media-1.png',
+        'OEBPS/text/media/media-2.png'
+      ]));
+
+      const chapter = strFromU8(book['OEBPS/text/note-1.xhtml'] ?? new Uint8Array());
+      expect(chapter).toContain('The root of the worked example.');
+      expect(chapter).toContain('src="media/media-1.png"');
     } finally {
       await setSettings({ outputFolderPath: '', shouldCreateZip: false });
       await removeFromVault([outputFolderPath]);
@@ -489,6 +541,36 @@ async function removeFromVault(paths: string[]): Promise<void> {
       }
     },
     input: { paths },
+    vaultPath: vaultPath()
+  });
+}
+
+/**
+ * Picks a format in the open export tree's Format dropdown, and waits for the dropdown to hold it.
+ *
+ * `change` is what the dropdown component listens for, so setting `.value` alone would leave the modal
+ * exporting in the format it opened on.
+ *
+ * @param format - The format's dropdown value.
+ */
+async function selectFormat(format: string): Promise<void> {
+  await pollInObsidian({
+    input: { format, treeModalSelector: TREE_MODAL_SELECTOR },
+    poll({ treeModalSelector }): string {
+      return document.querySelector(treeModalSelector)?.querySelector('select')?.value ?? '';
+    },
+    start({ format: formatValue, treeModalSelector }): void {
+      const formatSelectEl = document.querySelector(treeModalSelector)?.querySelector('select');
+      if (!formatSelectEl) {
+        throw new Error('The export tree has no Format dropdown.');
+      }
+
+      formatSelectEl.value = formatValue;
+      formatSelectEl.dispatchEvent(new Event('change'));
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: `the Format dropdown never took ${format}`,
+    until: (value: string): boolean => value === format,
     vaultPath: vaultPath()
   });
 }
