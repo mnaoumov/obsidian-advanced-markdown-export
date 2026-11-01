@@ -5,12 +5,17 @@ import type {
 
 import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
-import { App } from 'obsidian-test-mocks/obsidian';
 import {
+  App,
+  MarkdownRenderer
+} from 'obsidian-test-mocks/obsidian';
+import {
+  afterEach,
   beforeEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import type { ExportTarget } from './export-writer.ts';
@@ -186,6 +191,42 @@ describe('exportBundle', () => {
       settings.danglingLinkAction = DanglingLinkAction.Remove;
 
       expect(await exportWithout('Before ![[B]] after.')).toBe('Before  after.');
+    });
+  });
+
+  describe('a plugin code block', () => {
+    const NOTE = 'Before\n```dataview\nLIST\n```\nAfter';
+
+    beforeEach(() => {
+      vi.spyOn(MarkdownRenderer, 'render').mockImplementation(async (_app, _markdown, el) => {
+        const paragraph = el.createEl('p', { text: 'See ' });
+        paragraph.createEl('a', { href: 'B', text: 'B' });
+        await noopAsync();
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should be left as written by default', async () => {
+      const note = createFile('A.md', NOTE);
+
+      await exportFiles([note]);
+
+      expect(getWrittenText('A.md')).toBe(NOTE);
+      expect(MarkdownRenderer.render).not.toHaveBeenCalled();
+    });
+
+    it('should be replaced by its rendered output, whose links then obey the dangling-link setting', async () => {
+      settings.shouldRenderPluginCodeBlocks = true;
+      settings.danglingLinkAction = DanglingLinkAction.ReplaceWithDisplayText;
+      createFile('B.md', '# B');
+      const note = createFile('A.md', NOTE);
+
+      await exportFiles([note]);
+
+      expect(getWrittenText('A.md')).toBe('Before\nSee B\nAfter');
     });
   });
 });

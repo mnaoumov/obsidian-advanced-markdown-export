@@ -86,3 +86,11 @@
     border-radius: var(--radius-s);
   }
 }
+
+/* The off-screen element a plugin code block is rendered into during an export. Kept in the layout rather than hidden with display: none, because some plugins measure their container before they render. */
+.advanced-markdown-export-render-host {
+  left: -10000px;
+  position: absolute;
+  top: 0;
+  width: 800px;
+}

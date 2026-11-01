@@ -28,5 +28,9 @@ Open **Settings -> Community plugins -> `Advanced Markdown Export`**. Each optio
   - the vault-relative folder bundles are written to **on mobile**, where there is no system directory picker. Leave it empty to be asked to name one each time. On the desktop it is not read at all: choosing Export opens a directory picker, so the bundle can land anywhere, including outside the vault.
 - `shouldCreateZip`
   - compress the bundle into a single `.zip` instead of writing a folder.
+- `shouldRenderPluginCodeBlocks`
+  - replace each plugin code block, such as a `Dataview` or `Tasks` query, with what it renders, converted to markdown. Off by default: a recipient who has the plugin may want the live query.
+- `renderedCodeBlockLanguages`
+  - the code block languages that count as plugin code blocks. Starts as `dataview`, `dataviewjs` and `tasks`.
 - `danglingLinkAction`
   - what happens to a link pointing at a file you left out: keep it as it is, replace it with its display text, or remove it entirely.

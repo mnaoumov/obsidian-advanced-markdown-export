@@ -14,6 +14,7 @@ import {
 
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 
+import { renderPluginCodeBlocks } from './code-block-renderer.ts';
 import { DanglingLinkAction } from './plugin-settings.ts';
 
 /**
@@ -77,6 +78,9 @@ interface ConvertLinkParams {
  * still correct in the bundle without being touched at all, and two files with the same name can never
  * collide. Only links pointing OUT of the export need a decision, and that is the dangling-link setting.
  *
+ * A note can also have its plugin code blocks (`Dataview`, `Tasks`) replaced by what they render, when the
+ * setting asks for it.
+ *
  * Link rewriting applies to markdown. Every other file - a canvas included - is copied byte for byte, so
  * a canvas whose node points at an excluded file keeps that node as it was, whatever the dangling-link
  * setting says.
@@ -139,7 +143,21 @@ function convertLink(link: Reference, params: ConvertLinkParams): MaybeReturn<st
 }
 
 async function rewriteLinks(params: ConvertLinkParams): Promise<string> {
-  const content = await params.app.vault.read(params.file);
+  let content = await params.app.vault.read(params.file);
+
+  /*
+   * Rendered before the links are rewritten, so a link inside the rendered output - a `Dataview` table of
+   * notes - obeys the dangling-link setting like any link the note was written with.
+   */
+  if (params.settings.shouldRenderPluginCodeBlocks) {
+    content = await renderPluginCodeBlocks({
+      app: params.app,
+      content,
+      languages: params.settings.renderedCodeBlockLanguages,
+      sourcePath: params.file.path
+    });
+  }
+
   return editReferencesInContent({
     app: params.app,
     content,

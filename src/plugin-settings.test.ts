@@ -56,6 +56,12 @@ describe('PluginSettings', () => {
     expect(settings.shouldIncludeSubfolders).toBe(true);
   });
 
+  it('should not render plugin code blocks by default, with Dataview and Tasks pre-listed', () => {
+    const settings = new PluginSettings();
+    expect(settings.shouldRenderPluginCodeBlocks).toBe(false);
+    expect(settings.renderedCodeBlockLanguages).toEqual(['dataview', 'dataviewjs', 'tasks']);
+  });
+
   it('should not treat embeds as attachments by default', () => {
     const settings = new PluginSettings();
     expect(settings.shouldTreatEmbedsAsAttachments).toBe(false);
