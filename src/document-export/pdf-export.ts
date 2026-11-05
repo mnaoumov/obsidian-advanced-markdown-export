@@ -1,3 +1,5 @@
+import { requireApiVersion } from 'obsidian';
+
 import type { RenderedNote } from './note-renderer.ts';
 
 /**
@@ -5,6 +7,17 @@ import type { RenderedNote } from './note-renderer.ts';
  * the same 200 ms at the same point.
  */
 const LAYOUT_DELAY_IN_MILLISECONDS = 200;
+
+/**
+ * The first Obsidian whose main process allows an `about:blank` popup only when its first window feature
+ * is `token=<secret>`. Anything else is denied, and `window.open` answers `null`.
+ */
+const POPUP_TOKEN_API_VERSION = '1.15.1';
+
+/**
+ * The IPC channel Obsidian's main process answers the popup token on, since {@link POPUP_TOKEN_API_VERSION}.
+ */
+const POPUP_TOKEN_CHANNEL = 'popup-token';
 
 /**
  * The parameters for {@link printNotesToPdf}.
@@ -39,7 +52,7 @@ export interface PrintNotesToPdfParams {
  * @returns The PDF's bytes.
  */
 export async function printNotesToPdf(params: PrintNotesToPdfParams): Promise<Uint8Array> {
-  const popup = window.open('about:blank', '_blank', 'popup,hide=true');
+  const popup = window.open('about:blank', '_blank', getPopupFeatures());
 
   if (!popup) {
     throw new Error('Could not open the window the PDF is printed from.');
@@ -100,4 +113,24 @@ export async function printNotesToPdf(params: PrintNotesToPdfParams): Promise<Ui
   } finally {
     popup.close();
   }
+}
+
+/**
+ * The window features that get a hidden popup past Obsidian's main-process window-open handler, opened the
+ * way Obsidian's own **Export to PDF** opens one.
+ *
+ * Since 1.15.1 the handler allows an `about:blank` popup only when its first feature is `token=<secret>`,
+ * and the secret is read from the main process over IPC; before it, the features had to start with
+ * `popup`. The two shapes exclude each other, so the version picks one. The channel is not asked before
+ * 1.15.1: a synchronous IPC message nobody answers would block this window.
+ *
+ * @returns The `window.open` features string.
+ */
+function getPopupFeatures(): string {
+  if (!requireApiVersion(POPUP_TOKEN_API_VERSION)) {
+    return 'popup,hide=true';
+  }
+
+  const token: unknown = window.electron.ipcRenderer.sendSync(POPUP_TOKEN_CHANNEL);
+  return `token=${String(token)},hide=true`;
 }
