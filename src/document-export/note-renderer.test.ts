@@ -28,9 +28,8 @@ import { renderNotes } from './note-renderer.ts';
 const SHORT_SETTLE_IN_MILLISECONDS = 10;
 const SHORT_TIMEOUT_IN_MILLISECONDS = 100;
 
-type RenderImplementation = (markdown: string, el: HTMLElement, sourcePath: string) => void;
-
 describe('renderNotes', () => {
+  type RenderImplementation = (markdown: string, el: HTMLElement, sourcePath: string) => void;
   let app: AppOriginal;
   let mockApp: App;
   let rendered: null | RenderedNotes;
@@ -77,8 +76,8 @@ describe('renderNotes', () => {
     return rendered;
   }
 
-  function getBody(result: RenderedNotes, index = 0): HTMLElement {
-    const bodyEl = result.notes[index]?.element.querySelector<HTMLElement>('.advanced-markdown-export-document-body');
+  function getBody(result: RenderedNotes): HTMLElement {
+    const bodyEl = result.notes[0]?.element.querySelector<HTMLElement>('.advanced-markdown-export-document-body');
 
     if (!bodyEl) {
       throw new Error('No rendered body');

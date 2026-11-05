@@ -18,14 +18,16 @@ describe('createBinaryVerified', () => {
     app = App.createConfigured__();
   });
 
-  function encode(text: string): Uint8Array {
-    return new TextEncoder().encode(text);
+  const ARCHIVE_PATH = 'A.zip';
+
+  function encodeArchive(): Uint8Array {
+    return new TextEncoder().encode('archive');
   }
 
-  async function readText(path: string): Promise<string> {
-    const file = app.vault.getFileByPath(path);
+  async function readArchive(): Promise<string> {
+    const file = app.vault.getFileByPath(ARCHIVE_PATH);
     if (!file) {
-      throw new Error(`Nothing written at ${path}`);
+      throw new Error(`Nothing written at ${ARCHIVE_PATH}`);
     }
 
     return new TextDecoder().decode(await app.vault.readBinary(file));
@@ -37,9 +39,9 @@ describe('createBinaryVerified', () => {
   it('should write the file once when the bytes arrive', async () => {
     const modifyBinarySpy = vi.spyOn(app.vault, 'modifyBinary');
 
-    await createBinaryVerified(app.asOriginalType__(), 'A.zip', encode('archive'));
+    await createBinaryVerified(app.asOriginalType__(), ARCHIVE_PATH, encodeArchive());
 
-    expect(await readText('A.zip')).toBe('archive');
+    expect(await readArchive()).toBe('archive');
     expect(modifyBinarySpy).not.toHaveBeenCalled();
   });
 
@@ -47,17 +49,17 @@ describe('createBinaryVerified', () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValueOnce(EMPTY_STAT);
     const modifyBinarySpy = vi.spyOn(app.vault, 'modifyBinary');
 
-    await createBinaryVerified(app.asOriginalType__(), 'A.zip', encode('archive'));
+    await createBinaryVerified(app.asOriginalType__(), ARCHIVE_PATH, encodeArchive());
 
     expect(modifyBinarySpy).toHaveBeenCalledOnce();
-    expect(await readText('A.zip')).toBe('archive');
+    expect(await readArchive()).toBe('archive');
   });
 
   it('should report a file that stays short after every rewrite', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue(EMPTY_STAT);
     const modifyBinarySpy = vi.spyOn(app.vault, 'modifyBinary');
 
-    await expect(createBinaryVerified(app.asOriginalType__(), 'A.zip', encode('archive')))
+    await expect(createBinaryVerified(app.asOriginalType__(), ARCHIVE_PATH, encodeArchive()))
       .rejects.toThrow('Writing A.zip left 0 of its 7 bytes on disk after 3 attempts.');
     expect(modifyBinarySpy).toHaveBeenCalledTimes(2);
   });

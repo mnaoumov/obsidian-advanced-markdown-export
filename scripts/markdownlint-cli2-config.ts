@@ -13,7 +13,15 @@ export const config: MarkdownlintCli2ConfigurationSchema = {
   ...obsidianMarkdownlintCli2Config,
   config: {
     ...obsidianMarkdownlintCli2Config.config,
-    'no-soft-break-in-paragraph': true
+    'no-soft-break-in-paragraph': true,
+    /*
+     * In this plugin's prose `node` is an everyday word - a row of the dependency tree, or a canvas node -
+     * and never the Node.js command. Prose about the runtime writes `Node`, which the matcher, being
+     * case-sensitive, does not catch either way.
+     */
+    'tool-name-as-code': {
+      excludedToolNames: ['node']
+    }
   },
   ignores: [
     ...obsidianMarkdownlintCli2Config.ignores ?? [],

@@ -20,8 +20,6 @@ import {
   renderPluginCodeBlocks
 } from './code-block-renderer.ts';
 
-type RenderImplementation = (markdown: string, el: HTMLElement) => Promise<void> | void;
-
 const SHORT_SETTLE_IN_MILLISECONDS = 20;
 const SHORT_TIMEOUT_IN_MILLISECONDS = 200;
 
@@ -68,6 +66,7 @@ describe('findFencedCodeBlocks', () => {
 });
 
 describe('renderPluginCodeBlocks', () => {
+  type RenderImplementation = (markdown: string, el: HTMLElement) => Promise<void> | void;
   let app: AppOriginal;
 
   beforeEach(() => {

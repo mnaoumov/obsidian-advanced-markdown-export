@@ -144,8 +144,8 @@ describe('AdvancedMarkdownExportComponent', () => {
     return component;
   }
 
-  function createFolder(path: string): TAbstractFileOriginal {
-    return castTo<TAbstractFileOriginal>(TFolder.create__(app.vault, path).asOriginalType2__());
+  function createExampleFolder(): TAbstractFileOriginal {
+    return castTo<TAbstractFileOriginal>(TFolder.create__(app.vault, 'Example').asOriginalType2__());
   }
 
   function createMenu(): Menu {
@@ -216,7 +216,7 @@ describe('AdvancedMarkdownExportComponent', () => {
     expect(getMenuItemTitles(noteMenu)).toEqual([MENU_ITEM_TITLE]);
 
     const folderMenu = createMenu();
-    fileMenuHandlers[0]?.(castTo<MenuOriginal>(folderMenu), createFolder('Example'), 'file-explorer');
+    fileMenuHandlers[0]?.(castTo<MenuOriginal>(folderMenu), createExampleFolder(), 'file-explorer');
     expect(getMenuItemTitles(folderMenu)).toEqual([MENU_ITEM_TITLE]);
   });
 
@@ -236,7 +236,7 @@ describe('AdvancedMarkdownExportComponent', () => {
     const menu = createMenu();
     filesMenuHandlers[0]?.(
       castTo<MenuOriginal>(menu),
-      [createNote('A.md'), createNote('B.md'), createFolder('Example')],
+      [createNote('A.md'), createNote('B.md'), createExampleFolder()],
       'file-explorer'
     );
     expect(getMenuItemTitles(menu)).toEqual([MENU_ITEM_TITLE]);
