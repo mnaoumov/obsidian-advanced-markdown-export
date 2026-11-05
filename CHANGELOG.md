@@ -6,9 +6,9 @@
 - docs: add issue-filing instructions for AI agents
 - feat: add a Report a bug command
 - chore(github): give the bug form the field ids bug-report links prefill
-- build(deps): float obsidian-dev-toolkit to ^7.4.0 and override re2js for GHSA-gg6h-894w-4m9c
+- build(deps): float `obsidian-dev-toolkit` to ^7.4.0 and override re2js for GHSA-gg6h-894w-4m9c
 - build(deps): bump @mnaoumov/obsidian-lib to ^10.1.0 and adopt its Reference API names
-- build(deps): bump typescript-dev-toolkit to ^5.2.0
+- build(deps): bump `typescript-dev-toolkit` to ^5.2.0
 - build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
 - chore(deps): update vulnerable development dependencies
 - chore: adopt shared keyword identifier rule
@@ -29,7 +29,7 @@
 
 ## 1.0.2
 
-- chore(deps): update obsidian-test-mocks to 7 and obsidian-integration-testing to 17
+- chore(deps): update `obsidian-test-mocks` to 7 and `obsidian-integration-testing` to 17
 - test: restore full branch coverage
 - test: warm up the export destination before the integration tests use it
 - test(capture): apply the dark theme through applyObsidianTheme

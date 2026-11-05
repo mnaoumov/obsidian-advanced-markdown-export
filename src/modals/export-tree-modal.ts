@@ -212,9 +212,7 @@ class ExportTreeModal extends Modal {
      * an unresolved link has nothing to walk.
      */
     const isExpandable = isOwner && node.kind === DependencyKind.Note;
-    const twistyEl = isExpandable
-      ? selfEl.createDiv({ cls: 'tree-item-icon collapse-icon' })
-      : selfEl.createDiv({ cls: 'advanced-markdown-export-twisty-placeholder' });
+    const twistyEl = selfEl.createDiv({ cls: isExpandable ? 'tree-item-icon collapse-icon' : 'advanced-markdown-export-twisty-placeholder' });
 
     if (isExpandable) {
       setIcon(twistyEl, 'right-triangle');

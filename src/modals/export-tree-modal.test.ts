@@ -32,9 +32,6 @@ import {
 } from '../plugin-settings.ts';
 import { showExportTreeModal } from './export-tree-modal.ts';
 
-type AddButtonCallback = (button: ButtonComponentOriginal) => unknown;
-type AddDropdownCallback = (dropdown: DropdownComponentOriginal) => unknown;
-
 interface OpenedModal {
   readonly contentEl: HTMLElement;
   readonly promise: Promise<ExportChoice | null>;
@@ -50,6 +47,8 @@ describe('showExportTreeModal', () => {
   let settings: PluginSettings;
 
   beforeEach(() => {
+    type AddDropdownCallback = (dropdown: DropdownComponentOriginal) => unknown;
+    type AddButtonCallback = (button: ButtonComponentOriginal) => unknown;
     vi.clearAllMocks();
     app = App.createConfigured__();
     settings = new PluginSettings();
