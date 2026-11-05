@@ -5,6 +5,7 @@ import type {
 import type { TFile } from 'obsidian';
 
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { requireApiVersion } from 'obsidian';
 import {
   afterEach,
   beforeEach,
@@ -17,6 +18,11 @@ import {
 import type { RenderedNote } from './note-renderer.ts';
 
 import { printNotesToPdf } from './pdf-export.ts';
+
+vi.mock('obsidian', async (importOriginal) => ({
+  ...await importOriginal<typeof import('obsidian')>(),
+  requireApiVersion: vi.fn()
+}));
 
 interface FakePopup {
   readonly close: ReturnType<typeof vi.fn>;
@@ -33,9 +39,12 @@ describe('printNotesToPdf', () => {
   let popup: FakePopup;
   let printToPdfMock: ReturnType<typeof vi.fn<(options: ElectronPrintToPDFOptions) => Promise<Uint8Array>>>;
   let printedPageSize: ElectronPrintToPDFOptions['pageSize'];
+  let sendSyncMock: ReturnType<typeof vi.fn<(channel: string) => unknown>>;
   let snapshot: string;
 
   beforeEach(() => {
+    vi.mocked(requireApiVersion).mockReturnValue(false);
+    sendSyncMock = vi.fn((channel: string): unknown => channel === 'popup-token' ? 'secret' : undefined);
     printToPdfMock = vi.fn((options: ElectronPrintToPDFOptions) => {
       printedPageSize = options.pageSize;
       snapshot = popup.document.documentElement.outerHTML;
@@ -50,6 +59,7 @@ describe('printNotesToPdf', () => {
     vi.spyOn(window, 'open').mockReturnValue(castTo<Window>(popup));
     // The main window's view of every web contents: the app's own, and the popup's, titled by its document.
     castTo<WindowWithElectron>(window).electron = castTo<ElectronModule>({
+      ipcRenderer: { sendSync: sendSyncMock },
       remote: {
         webContents: {
           getAllWebContents: (): unknown[] => [
@@ -92,6 +102,16 @@ describe('printNotesToPdf', () => {
     expect(snapshot).toContain('style="--font-text-size: 16px;"');
     expect(snapshot).toMatch(/<div class="print"><div [^>]*id="note-1"[^>]*>One<\/div><div [^>]*id="note-2"[^>]*>Two<\/div><\/div>/);
     expect(popup.close).toHaveBeenCalled();
+    expect(sendSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('should open the popup with the main process token from Obsidian 1.15.1, as Obsidian itself does', async () => {
+    vi.mocked(requireApiVersion).mockImplementation((version) => version === '1.15.1');
+
+    await printNotesToPdf({ notes: [], pageSize: 'A4', title: 'Book' });
+
+    expect(sendSyncMock).toHaveBeenCalledWith('popup-token');
+    expect(window.open).toHaveBeenCalledWith('about:blank', '_blank', 'token=secret,hide=true');
   });
 
   it('should close the popup when printing fails', async () => {
