@@ -20,46 +20,50 @@ This release has 2 new features, 1 fix and 2 documentation changes. 3 maintenanc
 
 ## 1.1.0
 
-- docs(readme): point bug reports at the Report a bug command
-- docs: add issue-filing instructions for AI agents
-- feat: add a Report a bug command
-- chore(github): give the bug form the field ids bug-report links prefill
-- build(deps): float `obsidian-dev-toolkit` to ^7.4.0 and override re2js for GHSA-gg6h-894w-4m9c
-- build(deps): bump @mnaoumov/obsidian-lib to ^10.1.0 and adopt its Reference API names
-- build(deps): bump `typescript-dev-toolkit` to ^5.2.0
-- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
-- chore(deps): update vulnerable development dependencies
-- chore: adopt shared keyword identifier rule
-- refactor: adopt readonly interface members
-- docs(readme): combine related resources and plugin comparisons
-- docs: add a Similar plugins section to the README
+This release has 1 new feature and 4 documentation changes. 8 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### New
+
+- add a Report a bug command
+
+### Documentation
+
+- **readme:** point bug reports at the Report a bug command
+- add issue-filing instructions for AI agents
+- **readme:** combine related resources and plugin comparisons
+- add a Similar plugins section to the README
 
 ## 1.0.3
 
-- chore(deps): move from `obsidian-dev-utils` to `@mnaoumov/obsidian-lib` 6 and `@mnaoumov/obsidian-dev-toolkit` 5
-- chore: write every vault file through a verified write, so an Android write that silently lands empty is retried
-- build(deps): float `brace-expansion`, `sharp` and `fast-uri` past their advisories
-- ci: attest release assets through the toolkit's reusable workflow
-- docs(readme): lead the Debugging section with `Advanced Debug Mode`, and shorten it
-- docs(demo-vault): add code buttons to the example-graph Try it walkthrough
-- docs: mark plugin names as code
-- chore(github): point questions to Discussions from the new-issue page
+This release has 3 documentation changes. 5 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- **readme:** lead the Debugging section with `Advanced Debug Mode`, and shorten it
+- **demo-vault:** add code buttons to the example-graph Try it walkthrough
+- mark plugin names as code
 
 ## 1.0.2
 
-- chore(deps): update `obsidian-test-mocks` to 7 and `obsidian-integration-testing` to 17
-- test: restore full branch coverage
-- test: warm up the export destination before the integration tests use it
-- test(capture): apply the dark theme through applyObsidianTheme
-- docs: refresh the developer notes on the ZIP dependency and on re-shot screenshots
+This release has 1 documentation change. 4 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- refresh the developer notes on the ZIP dependency and on re-shot screenshots
 
 ## 1.0.1
 
-- fix: export on mobile. The export used to close its dialog and do nothing at all on a phone or tablet; it now opens the destination prompt and writes the bundle
-- fix: create the output folder on mobile when the vault does not have it yet, instead of silently writing nothing
-- fix(deps): update `devalue` to 5.9.4 (GHSA-9rgm-9g3h-6x36)
-- docs: add store screenshots and a README gallery
-- chore(deps): update dependencies
+This release has 3 fixes and 1 documentation change. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
+
+### Fixed
+
+- export on mobile. The export used to close its dialog and do nothing at all on a phone or tablet; it now opens the destination prompt and writes the bundle
+- create the output folder on mobile when the vault does not have it yet, instead of silently writing nothing
+- **deps:** update `devalue` to 5.9.4 (GHSA-9rgm-9g3h-6x36)
+
+### Documentation
+
+- add store screenshots and a README gallery
 
 ## 1.0.0
 
