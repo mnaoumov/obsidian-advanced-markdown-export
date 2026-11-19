@@ -26,7 +26,7 @@ interface ProtectedBase {
 
 interface RegisteredValidator {
   readonly key: string;
-  readonly validator: (value: number) => string | undefined;
+  readonly validator: (value: number) => null | string;
 }
 
 const protectedBasePrototype = castTo<ProtectedBase>(PluginSettingsComponentBase.prototype);
@@ -118,7 +118,7 @@ describe('PluginSettingsComponent', () => {
 
     it('should accept a traversal cap of one or more', () => {
       const validator = getRegisteredValidators().find((candidate) => candidate.key === 'maxTraversalDepth');
-      expect(validator?.validator(1)).toBeUndefined();
+      expect(validator?.validator(1)).toBeNull();
     });
   });
 });

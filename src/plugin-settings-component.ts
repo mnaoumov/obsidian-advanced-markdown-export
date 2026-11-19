@@ -1,6 +1,5 @@
 import type { DataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import type { PluginEventSource } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
-import type { MaybeReturn } from '@mnaoumov/typescript-lib/type';
 import type { GenericObject } from '@mnaoumov/typescript-lib/type-guards';
 
 import { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
@@ -50,10 +49,6 @@ export class PluginSettingsComponent extends PluginSettingsComponentBase<PluginS
 
   protected override registerValidators(): void {
     super.registerValidators();
-    this.registerValidator('maxTraversalDepth', (value): MaybeReturn<string> => {
-      if (value < 1) {
-        return 'The traversal cap must be at least 1';
-      }
-    });
+    this.registerValidator('maxTraversalDepth', (value): null | string => (value < 1 ? 'The traversal cap must be at least 1' : null));
   }
 }
