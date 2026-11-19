@@ -258,7 +258,7 @@ describe('renderNotes', () => {
         // An embed of a dangling note holding an embed of its own, and one without a src at all.
         el.createDiv({ attr: { alt: 'nested', src: 'Out.png' }, cls: 'internal-embed' })
           .createSpan({ attr: { src: 'Out.png' }, cls: 'internal-embed' });
-        el.createSpan({ cls: 'internal-embed', text: 'no src' });
+        el.createSpan({ cls: 'internal-embed', text: 'No src' });
       });
     });
 
@@ -273,7 +273,7 @@ describe('renderNotes', () => {
 
       const bodyEl = getBody(await render(['A.md', 'In.png']));
 
-      expect(bodyEl.textContent).toBe(['out alt', 'nested', 'no src'].join(''));
+      expect(bodyEl.textContent).toBe(['out alt', 'nested', 'No src'].join(''));
       expect([...bodyEl.querySelectorAll('.internal-embed')].map((embedEl) => embedEl.getAttribute('src'))).toEqual([
         'In.png',
         'Missing.png',

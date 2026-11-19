@@ -17,21 +17,45 @@ const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 const WAIT_POLL_IN_MILLISECONDS = 50;
 
 /**
- * Runs one of the plugin's sample commands.
+ * Opens the export dialog on the example note and ticks the given linked notes in it, one after another,
+ * so the tree grows the way the `Try it` walkthrough describes. Each tick waits for the note to expand
+ * before the next one, because only an expanded note's own links are on screen to tick.
  *
- * A command a note names is a command that note can run, so the reader never has to go hunting in the
- * Command Palette for the thing the paragraph just described.
+ * Then checks that each path in `expectedRepeatPaths` shows up as a greyed-out repeat, and throws if one
+ * does not: that disabled row is the whole point of the walkthrough, so a button that drew the tree
+ * without it would be demonstrating something false.
  *
- * Manual equivalent: the Command Palette entry of the same name.
+ * Manual equivalent: right-click `Example/A.md` in the file explorer, choose `Export with dependencies`,
+ * then tick each note in turn.
  */
-export function runCommand(app: App, commandId: string): void {
-  const fullCommandId = `${PLUGIN_ID}:${commandId}`;
-  if (!app.commands.commands[fullCommandId]) {
-    new Notice(`Command ${fullCommandId} is not registered — is the plugin enabled?`);
-    return;
+export async function openExampleTreeWithTickedNotes(
+  app: App,
+  notePaths: readonly string[],
+  expectedRepeatPaths: readonly string[]
+): Promise<void> {
+  const modalEl = await openExportDialogFromContextMenu(app, EXAMPLE_NOTE_PATH);
+
+  for (const notePath of notePaths) {
+    const checkbox = findRow(modalEl, notePath, false)?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!checkbox) {
+      throw new Error(`The export tree has no live row for ${notePath}.`);
+    }
+
+    const rowCountBefore = modalEl.querySelectorAll(TREE_PATH_SELECTOR).length;
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    await waitFor(
+      () => modalEl.querySelectorAll(TREE_PATH_SELECTOR).length > rowCountBefore,
+      `${notePath} never expanded after it was ticked`
+    );
   }
 
-  app.commands.executeCommandById(fullCommandId);
+  for (const repeatPath of expectedRepeatPaths) {
+    const repeatCheckbox = findRow(modalEl, repeatPath, true)?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!repeatCheckbox?.disabled || !repeatCheckbox.checked) {
+      throw new Error(`The export tree does not show ${repeatPath} as a greyed-out, checked repeat.`);
+    }
+  }
 }
 
 /**
@@ -74,69 +98,45 @@ export async function openExportDialogFromContextMenu(app: App, path: string): P
   }
 
   // A dialog an earlier button left open would otherwise be the one this function goes on to read.
-  const modalsBefore = new Set(document.querySelectorAll(TREE_MODAL_SELECTOR));
+  const modalsBefore = new Set(activeDocument.querySelectorAll(TREE_MODAL_SELECTOR));
   menuItem.callback?.();
 
   return waitFor(
-    () => [...document.querySelectorAll<HTMLElement>(TREE_MODAL_SELECTOR)].find((modalEl) => !modalsBefore.has(modalEl) && modalEl.querySelector(TREE_PATH_SELECTOR) !== null),
+    () => [...activeDocument.querySelectorAll<HTMLElement>(TREE_MODAL_SELECTOR)].find((modalEl) => !modalsBefore.has(modalEl) && modalEl.querySelector(TREE_PATH_SELECTOR) !== null) ?? null,
     'the export tree never opened'
   );
 }
 
 /**
- * Opens the export dialog on the example note and ticks the given linked notes in it, one after another,
- * so the tree grows the way the `Try it` walkthrough describes. Each tick waits for the note to expand
- * before the next one, because only an expanded note's own links are on screen to tick.
+ * Runs one of the plugin's sample commands.
  *
- * Then checks that each path in `expectedRepeatPaths` shows up as a greyed-out repeat, and throws if one
- * does not: that disabled row is the whole point of the walkthrough, so a button that drew the tree
- * without it would be demonstrating something false.
+ * A command a note names is a command that note can run, so the reader never has to go hunting in the
+ * Command Palette for the thing the paragraph just described.
  *
- * Manual equivalent: right-click `Example/A.md` in the file explorer, choose `Export with dependencies`,
- * then tick each note in turn.
+ * Manual equivalent: the Command Palette entry of the same name.
  */
-export async function openExampleTreeWithTickedNotes(
-  app: App,
-  notePaths: readonly string[],
-  expectedRepeatPaths: readonly string[]
-): Promise<void> {
-  const modalEl = await openExportDialogFromContextMenu(app, EXAMPLE_NOTE_PATH);
-
-  for (const notePath of notePaths) {
-    const checkbox = findRow(modalEl, notePath, false)?.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    if (!checkbox) {
-      throw new Error(`The export tree has no live row for ${notePath}.`);
-    }
-
-    const rowCountBefore = modalEl.querySelectorAll(TREE_PATH_SELECTOR).length;
-    checkbox.checked = true;
-    checkbox.dispatchEvent(new Event('change'));
-    await waitFor(
-      () => modalEl.querySelectorAll(TREE_PATH_SELECTOR).length > rowCountBefore,
-      `${notePath} never expanded after it was ticked`
-    );
+export function runCommand(app: App, commandId: string): void {
+  const fullCommandId = `${PLUGIN_ID}:${commandId}`;
+  if (!app.commands.findCommand(fullCommandId)) {
+    new Notice(`Command ${fullCommandId} is not registered — is the plugin enabled?`);
+    return;
   }
 
-  for (const repeatPath of expectedRepeatPaths) {
-    const repeatCheckbox = findRow(modalEl, repeatPath, true)?.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    if (!repeatCheckbox?.disabled || !repeatCheckbox.checked) {
-      throw new Error(`The export tree does not show ${repeatPath} as a greyed-out, checked repeat.`);
-    }
-  }
+  app.commands.executeCommandById(fullCommandId);
 }
 
-function findRow(modalEl: HTMLElement, path: string, isRepeat: boolean): HTMLElement | undefined {
+function findRow(modalEl: HTMLElement, path: string, isRepeat: boolean): HTMLElement | null {
   return [...modalEl.querySelectorAll<HTMLElement>('.tree-item-self')].find((selfEl) =>
     selfEl.querySelector(TREE_PATH_SELECTOR)?.textContent === path
     && selfEl.hasClass('advanced-markdown-export-repeat') === isRepeat
-  );
+  ) ?? null;
 }
 
-async function waitFor<T>(poll: () => false | null | T | undefined, timeoutMessage: string): Promise<T> {
+async function waitFor<T>(poll: () => false | null | T, timeoutMessage: string): Promise<T> {
   const deadline = Date.now() + WAIT_TIMEOUT_IN_MILLISECONDS;
   while (Date.now() < deadline) {
     const value = poll();
-    if (value !== undefined && value !== null && value !== false) {
+    if (value !== null && value !== false) {
       return value;
     }
 

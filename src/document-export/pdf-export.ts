@@ -78,14 +78,16 @@ export async function printNotesToPdf(params: PrintNotesToPdfParams): Promise<Ui
      * The app's stylesheets, this plugin's own among them: its `styles.css` carries the page break between
      * notes.
      */
-    for (const styleEl of document.head.querySelectorAll('link[rel="stylesheet"], style')) {
+    // THIS window's document, the one that opened the popup, as Obsidian's own Export to PDF copies it.
+    const openerDocument = window.document;
+    for (const styleEl of openerDocument.head.querySelectorAll('link[rel="stylesheet"], style')) {
       popupDocument.head.append(popupDocument.importNode(styleEl, true));
     }
 
-    popupDocument.body.className = document.body.className;
+    popupDocument.body.className = openerDocument.body.className;
     popupDocument.body.classList.remove('theme-dark');
     popupDocument.body.classList.add('theme-light');
-    popupDocument.body.setAttribute('style', document.body.getAttribute('style') ?? '');
+    popupDocument.body.setAttribute('style', openerDocument.body.getAttribute('style') ?? '');
 
     const printEl = popupDocument.adoptNode(createDiv({ cls: 'print' }));
     popupDocument.body.append(printEl);
