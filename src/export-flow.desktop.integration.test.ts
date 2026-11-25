@@ -209,7 +209,7 @@ async function runDocumentExportScenario(format: string, extension: string): Pro
         });
 
         const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
-        const noteBCheckbox = [...modalEl?.querySelectorAll('.tree-item-self') ?? []]
+        const noteBCheckbox = [...(modalEl?.querySelectorAll('.tree-item-self') ?? [])]
           .find((selfEl) => selfEl.querySelector('.advanced-markdown-export-path')?.textContent === `${folderPath}/B.md`)
           ?.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox');
         if (noteBCheckbox) {
@@ -223,7 +223,7 @@ async function runDocumentExportScenario(format: string, extension: string): Pro
           formatSelect.dispatchEvent(new Event('change'));
         }
 
-        [...modalEl?.querySelectorAll('button') ?? []].find((button) => button.textContent === 'Export')?.click();
+        [...(modalEl?.querySelectorAll('button') ?? [])].find((button) => button.textContent === 'Export')?.click();
 
         await waitUntil({
           message: 'the document export never reported that it had finished',
@@ -364,7 +364,7 @@ async function runExportScenario(): Promise<ExportResult> {
         const modalEl = document.querySelector('.advanced-markdown-export-tree-modal');
 
         function getRowPaths(): string[] {
-          return [...modalEl?.querySelectorAll('.advanced-markdown-export-path') ?? []].map((el) => el.textContent);
+          return [...(modalEl?.querySelectorAll('.advanced-markdown-export-path') ?? [])].map((el) => el.textContent);
         }
 
         // A single root is expanded on the way in, so its dependencies are on screen before anything is ticked.
@@ -377,7 +377,7 @@ async function runExportScenario(): Promise<ExportResult> {
         const rowPaths = getRowPaths();
 
         function getCheckbox(path: string): HTMLInputElement | null {
-          const selfEl = [...modalEl?.querySelectorAll('.tree-item-self') ?? []]
+          const selfEl = [...(modalEl?.querySelectorAll('.tree-item-self') ?? [])]
             .find((candidate) => candidate.querySelector('.advanced-markdown-export-path')?.textContent === path);
           return selfEl?.querySelector<HTMLInputElement>('.advanced-markdown-export-checkbox') ?? null;
         }
@@ -389,7 +389,7 @@ async function runExportScenario(): Promise<ExportResult> {
           noteBCheckbox.dispatchEvent(new Event('change'));
         }
 
-        const exportButton = [...modalEl?.querySelectorAll('button') ?? []]
+        const exportButton = [...(modalEl?.querySelectorAll('button') ?? [])]
           .find((button) => button.textContent === 'Export');
         exportButton?.click();
 

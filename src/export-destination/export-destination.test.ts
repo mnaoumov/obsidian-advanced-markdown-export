@@ -17,7 +17,7 @@ interface MockIsDesktopApp {
 }
 
 vi.mock('obsidian', async (importOriginal) => ({
-  ...await importOriginal<typeof import('obsidian')>(),
+  ...(await importOriginal<typeof import('obsidian')>()),
   Platform: { isDesktopApp: true }
 }));
 

@@ -79,6 +79,7 @@ export async function printNotesToPdf(params: PrintNotesToPdfParams): Promise<Ui
      * notes.
      */
     // THIS window's document, the one that opened the popup, as Obsidian's own Export to PDF copies it.
+    // eslint-disable-next-line obsidian-dev-toolkit/prefer-active-window -- The popup is opened from the main window, so its stylesheets are copied from there.
     const openerDocument = window.document;
     for (const styleEl of openerDocument.head.querySelectorAll('link[rel="stylesheet"], style')) {
       popupDocument.head.append(popupDocument.importNode(styleEl, true));
@@ -100,6 +101,7 @@ export async function printNotesToPdf(params: PrintNotesToPdfParams): Promise<Ui
       popup.setTimeout(resolve, LAYOUT_DELAY_IN_MILLISECONDS);
     });
 
+    // eslint-disable-next-line obsidian-dev-toolkit/prefer-active-window -- `electron` is set up on the main window; a bare popup has none (see AGENTS.md).
     const popupWebContents = window.electron.remote.webContents.getAllWebContents().find((webContents) => webContents.getTitle() === titleToken);
 
     if (!popupWebContents) {
@@ -133,6 +135,7 @@ function getPopupFeatures(): string {
     return 'popup,hide=true';
   }
 
+  // eslint-disable-next-line obsidian-dev-toolkit/prefer-active-window -- `electron` is set up on the main window; a bare popup has none (see AGENTS.md).
   const token: unknown = window.electron.ipcRenderer.sendSync(POPUP_TOKEN_CHANNEL);
   return `token=${String(token)},hide=true`;
 }

@@ -35,7 +35,8 @@ function createParams(): BuildEpubParams {
 describe('buildEpub', () => {
   it('should store the mimetype first and uncompressed, so a reader recognizes the file', () => {
     const epub = buildEpub(createParams());
-    const header = strFromU8(epub.slice(0, MIMETYPE_DATA_OFFSET + 'application/epub+zip'.length));
+    // Latin-1, one character per byte: the header's modification time bytes can form a UTF-8 sequence and shift every offset.
+    const header = strFromU8(epub.slice(0, MIMETYPE_DATA_OFFSET + 'application/epub+zip'.length), true);
 
     expect(header.slice(30, MIMETYPE_DATA_OFFSET)).toBe('mimetype');
     expect(header.slice(MIMETYPE_DATA_OFFSET)).toBe('application/epub+zip');

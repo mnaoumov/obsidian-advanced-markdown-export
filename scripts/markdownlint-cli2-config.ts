@@ -24,7 +24,7 @@ export const config: MarkdownlintCli2ConfigurationSchema = {
     }
   },
   ignores: [
-    ...obsidianMarkdownlintCli2Config.ignores ?? [],
+    ...(obsidianMarkdownlintCli2Config.ignores ?? []),
     'demo-vault/Example/**'
   ]
 };
