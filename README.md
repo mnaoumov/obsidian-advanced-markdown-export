@@ -93,16 +93,22 @@ Notes built on `Dataview` or `Tasks` queries can travel as their results: turn o
 | [`Cluster Export`](https://community.obsidian.md/plugins/cluster-export) | Graph cluster pruning; Markdown/assets export; optional sync; desktop-only | Alternative selection: file tree; one-time export |
 | [`Codex Share`](https://community.obsidian.md/plugins/codex-share) | Property-selected notes and embeds synced to an external AI folder; no link traversal | Alternative workflow: reviewed bundle export with linked-note traversal |
 | [`Copy Notes to Vault`](https://community.obsidian.md/plugins/copy-notes-to-vault) | Tree-selected notes and attachments copied to another vault; no link traversal; desktop-only | Broader collection: follows links between notes |
+| [`Document Exporter`](https://community.obsidian.md/plugins/document-exporter) | Selected notes, folders or query results; Markdown bundle, HTML, PDF, DOCX or EPUB; merged export; progress with cancel; no linked-note traversal | Overlapping formats (Markdown bundle, EPUB, PDF); adds: linked notes and attachments offered in a tree; no DOCX or HTML |
+| [`EPUB Exporter`](https://community.obsidian.md/plugins/epub-exporter) | EPUB of a note, a book note's embedded chapters or a folder; chapter sidebar and reordering; book metadata from properties | Same EPUB output; different selection: notes reached through links, picked in a tree; also Markdown bundles and PDF |
 | [`Export Markdown ZIP`](https://community.obsidian.md/plugins/export-markdown-zip) | Recursive note/attachment ZIP; relative-link rewrites; desktop-only | Same ZIP goal; per-file selection; mobile too |
-| [`Linked Note Exporter`](https://community.obsidian.md/plugins/linked-note-exporter) | Folder/ZIP export; notes and attachments; link-depth limit; exclusions | Same bundle goal; reviewed file tree with per-file choices; no depth setting |
-| [`markdown export`](https://community.obsidian.md/plugins/obsidian-markdown-export-plugin) | Note/folder export with images and embeds; Markdown or HTML; no linked-note traversal | Broader file collection: offers linked notes individually |
+| [`Inkbound`](https://community.obsidian.md/plugins/inkbound) | EPUB of a note, a book folder or a note plus its linked notes; preview; covers and metadata from properties; e-reader delivery | Same EPUB goal for linked notes; adds: per-file choices at any depth, Markdown bundles and PDF; no cover or e-reader delivery |
+| [`Kindle`](https://community.obsidian.md/plugins/obsidian-kindle-export) | One note with its embedded notes and images as EPUB, sent to a Kindle or PocketBook; merged Markdown | Different collection: linked notes become chapters or separate files; no e-reader delivery |
+| [`Linked Note Exporter`](https://community.obsidian.md/plugins/linked-note-exporter) | Folder/ZIP export; notes and attachments; link-depth limit; backlinks; exclusions | Same bundle goal; reviewed file tree with per-file choices; no depth setting; no backlinks |
+| [`markdown export`](https://community.obsidian.md/plugins/obsidian-markdown-export-plugin) | Note/folder export with images and embeds; Markdown or HTML; no linked-note traversal | Broader file collection: offers linked notes individually; EPUB and PDF instead of HTML |
+| [`Markdown to CHM`](https://community.obsidian.md/plugins/md-to-chm) | One or many notes with attachments compiled to a CHM help file; links rewritten to its pages; Windows-only | Same rendered single-document idea; different formats: EPUB and PDF, and Markdown bundles; linked notes offered in a tree |
+| [`Note Courier`](https://community.obsidian.md/plugins/note-courier) | One note and its images copied to another vault through the clipboard; desktop-only | Broader collection: linked notes and any attachment; writes a bundle rather than into a vault |
 | [`NoteParcel`](https://community.obsidian.md/plugins/vault-bridge-toolkit) | Selected notes/folders and attachments copied to another vault; no link traversal; desktop-only | Broader collection: follows links between notes |
 | [`Obsidian Bundler`](https://github.com/zombie110year/obsidian-bundler) | Unlisted; recursively flattens notes/attachments into one directory; no selection | Same bundle goal; preserves separate paths and offers per-file choices |
 | [`Share as ZIP`](https://community.obsidian.md/plugins/share-as-zip) | Recursive linked-note/attachment ZIP; preset exclusions | Same ZIP goal; preview and per-file selection before writing |
-| [`Smart Export`](https://community.obsidian.md/plugins/smart-export) | Depth-limited traversal; merges notes into Markdown/XML for reading or AI | Alternative output: separate notes with attachments |
+| [`Smart Export`](https://community.obsidian.md/plugins/smart-export) | Depth-limited traversal; backlinks; merges notes into Markdown/XML for reading or AI | Different output: separate notes with attachments, or an EPUB or PDF; no merged Markdown or XML |
 | [`Trans Vault`](https://community.obsidian.md/plugins/transvault) | Copy/move to another vault; reviewed direct-link tree; desktop-only | Broader destination: bundle anywhere; follows links as deep as selected |
 
-Last searched for similar plugins on 2026-10-26.
+Last searched for similar plugins on 2026-11-25.
 
 ## Installation
 
