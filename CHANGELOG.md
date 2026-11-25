@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.2.1
+
+This release has 3 documentation changes. 4 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- refresh the See also comparison with six more export plugins
+- show Obsidian downloads and minimum Obsidian version badges
+- **changelog:** regroup the published release notes for readers
+
 ## 1.2.0
 
 This release has 2 new features, 1 fix and 2 documentation changes. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
