@@ -152,7 +152,7 @@ async function openFolderRoot(folderPath: string): Promise<ScaleResult> {
       const modalEl = document.querySelector(treeModalSelector);
 
       function getRowPaths(): string[] {
-        return [...modalEl?.querySelectorAll(treePathSelector) ?? []].map((el) => el.textContent);
+        return [...(modalEl?.querySelectorAll(treePathSelector) ?? [])].map((el) => el.textContent);
       }
 
       await waitUntil({
@@ -164,7 +164,7 @@ async function openFolderRoot(folderPath: string): Promise<ScaleResult> {
       const openDurationInMilliseconds = performance.now() - startedAt;
       const rowPaths = getRowPaths();
 
-      const cancelButton = [...modalEl?.querySelectorAll('button') ?? []]
+      const cancelButton = [...(modalEl?.querySelectorAll('button') ?? [])]
         .find((button) => button.textContent === 'Cancel');
       cancelButton?.click();
 

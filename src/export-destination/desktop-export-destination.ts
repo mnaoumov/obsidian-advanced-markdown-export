@@ -57,6 +57,7 @@ export class DesktopExportDestination implements ExportDestination {
    * @returns The resolved file, or `null` when the user backed out.
    */
   public async resolveFile(params: DesktopExportDestinationResolveFileParams): Promise<null | ResolvedExportFile> {
+    // eslint-disable-next-line obsidian-dev-toolkit/prefer-active-window -- The Electron dialogs are reached through the main window, which always has `electron`.
     const result = await window.electron.remote.dialog.showSaveDialog({
       defaultPath: `${params.bundleName}.${params.extension}`,
       filters: [{ extensions: [params.extension], name: params.formatName }],
@@ -79,6 +80,7 @@ export class DesktopExportDestination implements ExportDestination {
   }
 
   public async resolveTarget(params: DesktopExportDestinationResolveTargetParams): Promise<null | ResolvedExportTarget> {
+    // eslint-disable-next-line obsidian-dev-toolkit/prefer-active-window -- The Electron dialogs are reached through the main window, which always has `electron`.
     const result = await window.electron.remote.dialog.showOpenDialog({
       properties: ['openDirectory', 'createDirectory'],
       title: 'Choose where to write the export'

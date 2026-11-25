@@ -20,7 +20,7 @@ import type { RenderedNote } from './note-renderer.ts';
 import { printNotesToPdf } from './pdf-export.ts';
 
 vi.mock('obsidian', async (importOriginal) => ({
-  ...await importOriginal<typeof import('obsidian')>(),
+  ...(await importOriginal<typeof import('obsidian')>()),
   requireApiVersion: vi.fn()
 }));
 
