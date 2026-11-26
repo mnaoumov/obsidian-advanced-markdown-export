@@ -35,9 +35,20 @@ th, td { border: 1px solid #999; padding: 0.25em 0.5em; }
  */
 export interface BuildEpubParams {
   /**
+   * The book's authors, each written as a `dc:creator`. None by default.
+   */
+  readonly authors?: readonly string[];
+
+  /**
    * The book's chapters, in reading order.
    */
   readonly chapters: readonly EpubChapter[];
+
+  /**
+   * The file name of the resource that is the book's cover image, one of {@link resources}. No cover by
+   * default.
+   */
+  readonly coverFileName?: string;
 
   /**
    * The book's unique identifier, a URN.
@@ -226,7 +237,14 @@ ${navPoints}
 
 function buildPackageDocument(params: BuildEpubParams): string {
   const chapterItems = params.chapters.map((chapter, index) => `<item id="chapter-${String(index + 1)}" href="text/${escapeXml(chapter.fileName)}" media-type="application/xhtml+xml"/>`);
-  const resourceItems = params.resources.map((resource, index) => `<item id="resource-${String(index + 1)}" href="text/media/${escapeXml(resource.fileName)}" media-type="${getMediaType(resource.fileName)}"/>`);
+  const coverIndex = params.resources.findIndex((resource) => resource.fileName === params.coverFileName);
+  const resourceItems = params.resources.map((resource, index) => {
+    const coverProperties = index === coverIndex ? ' properties="cover-image"' : '';
+    return `<item id="${getResourceItemId(index)}" href="text/media/${escapeXml(resource.fileName)}" media-type="${getMediaType(resource.fileName)}"${coverProperties}/>`;
+  });
+  const creatorElements = (params.authors ?? []).map((author) => `<dc:creator>${escapeXml(author)}</dc:creator>\n`).join('');
+  // EPUB 2 readers find the cover through this meta; EPUB 3 ones through the item's `cover-image` property.
+  const coverMeta = coverIndex === -1 ? '' : `<meta name="cover" content="${getResourceItemId(coverIndex)}"/>\n`;
   const spineItems = params.chapters.map((_chapter, index) => `<itemref idref="chapter-${String(index + 1)}"/>`);
   const modified = `${params.modified.toISOString().slice(0, '2000-01-01T00:00:00'.length)}Z`;
 
@@ -235,8 +253,8 @@ function buildPackageDocument(params: BuildEpubParams): string {
 <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
 <dc:identifier id="book-id">${escapeXml(params.identifier)}</dc:identifier>
 <dc:title>${escapeXml(params.title)}</dc:title>
-<dc:language>${escapeXml(params.language)}</dc:language>
-<meta property="dcterms:modified">${modified}</meta>
+${creatorElements}<dc:language>${escapeXml(params.language)}</dc:language>
+${coverMeta}<meta property="dcterms:modified">${modified}</meta>
 </metadata>
 <manifest>
 <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
@@ -249,4 +267,8 @@ ${spineItems.join('\n')}
 </spine>
 </package>
 `;
+}
+
+function getResourceItemId(index: number): string {
+  return `resource-${String(index + 1)}`;
 }

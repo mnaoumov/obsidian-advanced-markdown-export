@@ -49,8 +49,9 @@ describe('buildEpubFromNotes', () => {
     return { anchorId, element, file, title: file.basename };
   }
 
-  async function build(notes: RenderedNote[]): Promise<Record<string, string>> {
-    const entries = unzipSync(await buildEpubFromNotes({ app, modified: new Date(0), notes, title: 'Book' }));
+  async function build(notes: RenderedNote[], coverFile: null | TFile = null): Promise<Record<string, string>> {
+    const metadata = { authors: ['Ann'], coverFile, language: 'uk', title: 'Book' };
+    const entries = unzipSync(await buildEpubFromNotes({ app, metadata, modified: new Date(0), notes }));
     return Object.fromEntries(Object.entries(entries).map(([path, data]) => [path, path.endsWith('.png') ? String(data.length) : strFromU8(data)]));
   }
 
@@ -105,5 +106,35 @@ describe('buildEpubFromNotes', () => {
     expect(chapter).toContain('local alt');
     expect(chapter).toContain('missing');
     expect(chapter.match(/<img/g)).toHaveLength(1);
+  });
+
+  it('should take the title, authors and language from the metadata', async () => {
+    mockApp.vault.createSync__('A.md', 'x');
+
+    const entries = await build([createNote('A.md', 'note-1', '<p>x</p>')]);
+    const opf = entries['OEBPS/content.opf'] ?? '';
+
+    expect(opf).toContain('<dc:title>Book</dc:title>');
+    expect(opf).toContain('<dc:creator>Ann</dc:creator>');
+    expect(opf).toContain('<dc:language>uk</dc:language>');
+    expect(opf).not.toContain('cover');
+  });
+
+  it('should pack the cover first, and share its copy with a note that embeds the same image', async () => {
+    mockApp.vault.createSync__('A.md', 'x');
+    await app.vault.createBinary('Pic.png', new Uint8Array([1, 2, 3]).buffer);
+    await app.vault.createBinary('Cover.png', new Uint8Array([4, 5]).buffer);
+
+    const entries = await build(
+      [createNote('A.md', 'note-1', '<span class="internal-embed" src="Pic.png"><img></span><span class="internal-embed" src="Cover.png"><img></span>')],
+      getFile('Cover.png')
+    );
+    const opf = entries['OEBPS/content.opf'] ?? '';
+
+    expect(entries['OEBPS/text/media/media-1.png']).toBe('2');
+    expect(Object.keys(entries).filter((path) => path.includes('/media/'))).toHaveLength(2);
+    expect(entries['OEBPS/text/note-1.xhtml']).toContain('<img src="media/media-1.png" />');
+    expect(opf).toContain('<item id="resource-1" href="text/media/media-1.png" media-type="image/png" properties="cover-image"/>');
+    expect(opf).toContain('<meta name="cover" content="resource-1"/>');
   });
 });

@@ -4,8 +4,7 @@ import type { MenuEventRegistrar } from '@mnaoumov/obsidian-lib/menu-event-regis
 import type {
   App,
   Menu,
-  TAbstractFile,
-  TFile
+  TAbstractFile
 } from 'obsidian';
 
 import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
@@ -16,13 +15,17 @@ import {
 } from '@mnaoumov/obsidian-lib/file-system';
 import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 import { basename } from '@mnaoumov/typescript-lib/path';
-import { TFolder } from 'obsidian';
+import {
+  TFile,
+  TFolder
+} from 'obsidian';
 
 import type { RenderedNote } from './document-export/note-renderer.ts';
 import type { ExportDestination } from './export-destination/export-destination.ts';
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 
 import { DependencyResolver } from './dependency-resolver.ts';
+import { resolveBookMetadata } from './document-export/book-metadata.ts';
 import {
   buildEpubFromNotes,
   getChapterFileName
@@ -55,6 +58,12 @@ interface AdvancedMarkdownExportComponentExportDocumentParams {
   readonly destination: ExportDestination;
   readonly files: readonly TFile[];
   readonly format: ExportFormat.Epub | ExportFormat.Pdf;
+
+  /**
+   * The note the export was started from, whose properties give the book its metadata, or `null` when it
+   * was started from a folder or a selection.
+   */
+  readonly rootNote: null | TFile;
   readonly settings: ReadonlyPluginSettings;
 }
 
@@ -177,9 +186,13 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
         ? await printPdf(renderedNotes.notes, params)
         : await buildEpubFromNotes({
           app: this.app,
+          metadata: resolveBookMetadata({
+            app: this.app,
+            fallbackTitle: params.bundleName,
+            rootNote: params.rootNote
+          }),
           modified: new Date(),
-          notes: renderedNotes.notes,
-          title: params.bundleName
+          notes: renderedNotes.notes
         });
       await resolvedFile.write(data);
     } finally {
@@ -251,6 +264,7 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
         destination,
         files: choice.files,
         format: choice.format,
+        rootNote: getRootNote(roots),
         settings
       });
       return;
@@ -302,6 +316,14 @@ function getBundleName(app: App, roots: readonly TAbstractFile[]): string {
    * deep must still produce one bundle folder next to the others, not a chain of empty parents.
    */
   return basename(trimMarkdownExtension(firstRoot));
+}
+
+/**
+ * The one note the export was started from. A folder or a selection has no single note to speak for it.
+ */
+function getRootNote(roots: readonly TAbstractFile[]): null | TFile {
+  const [firstRoot] = roots;
+  return roots.length === 1 && firstRoot instanceof TFile ? firstRoot : null;
 }
 
 /**
