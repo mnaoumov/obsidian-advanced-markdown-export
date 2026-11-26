@@ -40,6 +40,11 @@ export interface ExportForestNode {
   readonly id: NodeId;
 
   /**
+   * Whether this node is a file that links TO its parent, rather than one its parent links to.
+   */
+  readonly isBacklink: boolean;
+
+  /**
    * Whether this node has been expanded. Only an owner is ever expanded.
    */
   readonly isExpanded: boolean;
@@ -96,6 +101,7 @@ interface ExportForestConstructorParams {
 interface ExportForestCreateNodeParams {
   readonly depth: number;
   readonly file: null | TFile;
+  readonly isBacklink: boolean;
   readonly kind: DependencyKind;
   readonly path: string;
   readonly subpath: string;
@@ -106,6 +112,7 @@ interface MutableNode {
   readonly depth: number;
   readonly file: null | TFile;
   readonly id: NodeId;
+  readonly isBacklink: boolean;
   // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Expansion changes as the user opens and collapses this node.
   isExpanded: boolean;
   // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Lazy resolution marks this node after its dependencies are loaded.
@@ -159,6 +166,7 @@ export class ExportForest {
         const node = this.createNode({
           depth: 0,
           file,
+          isBacklink: false,
           kind: isNote(file) ? DependencyKind.Note : DependencyKind.Attachment,
           path: file.path,
           subpath: ''
@@ -239,6 +247,7 @@ export class ExportForest {
       const child = this.createNode({
         depth: node.depth + 1,
         file: dependency.file,
+        isBacklink: dependency.isBacklink,
         kind: dependency.kind,
         path: dependency.path,
         subpath: dependency.subpath
@@ -246,7 +255,11 @@ export class ExportForest {
       node.childIds.push(child.id);
       this.getNodeOrThrow(child.ownerId).parentPaths.add(node.path);
 
-      if (child.ownerId === child.id && this.isCheckedByDefault(dependency.kind)) {
+      /*
+       * A backlink never arrives checked, whatever the linked-notes default says: a hub note can have
+       * hundreds of them, and each one checked would expand in turn.
+       */
+      if (child.ownerId === child.id && !dependency.isBacklink && this.isCheckedByDefault(dependency.kind)) {
         this.checkedPaths.add(child.path);
       }
     }
@@ -402,6 +415,7 @@ export class ExportForest {
       depth: params.depth,
       file: params.file,
       id,
+      isBacklink: params.isBacklink,
       isExpanded: false,
       isResolved: false,
       kind: params.kind,

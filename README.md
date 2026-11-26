@@ -65,6 +65,8 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 **The export has many roots.** Start from one note, from a multi-selection in the file explorer, or from a whole folder — every note in it becomes a root, and the tree becomes a forest.
 
+**The notes that point at a note can travel with it.** A hub or topic note is usually shared together with the notes that link to it. Turn on **Offer backlinks** and each note's row also lists the notes linking to it, marked **Links here**. They arrive unchecked whatever the linked-note default says, and one expands only when you tick it.
+
 **A running total, before you commit to it.** The dialog keeps a live file count and total size above the tree, so "is this export getting huge?" is answered while you are still ticking rather than after the bundle is written.
 
 **Links that survive the trip.** The bundle keeps its vault-relative structure, so links between included files still resolve after extraction and two files with the same name cannot collide. Links to files you left out are handled by a policy you choose rather than silently breaking.
@@ -98,7 +100,7 @@ Notes built on `Dataview` or `Tasks` queries can travel as their results: turn o
 | [`Export Markdown ZIP`](https://community.obsidian.md/plugins/export-markdown-zip) | Recursive note/attachment ZIP; relative-link rewrites; desktop-only | Same ZIP goal; per-file selection; mobile too |
 | [`Inkbound`](https://community.obsidian.md/plugins/inkbound) | EPUB of a note, a book folder or a note plus its linked notes; preview; covers and metadata from properties; e-reader delivery | Same EPUB goal for linked notes; adds: per-file choices at any depth, Markdown bundles and PDF; no cover or e-reader delivery |
 | [`Kindle`](https://community.obsidian.md/plugins/obsidian-kindle-export) | One note with its embedded notes and images as EPUB, sent to a Kindle or PocketBook; merged Markdown | Different collection: linked notes become chapters or separate files; no e-reader delivery |
-| [`Linked Note Exporter`](https://community.obsidian.md/plugins/linked-note-exporter) | Folder/ZIP export; notes and attachments; link-depth limit; backlinks; exclusions | Same bundle goal; reviewed file tree with per-file choices; no depth setting; no backlinks |
+| [`Linked Note Exporter`](https://community.obsidian.md/plugins/linked-note-exporter) | Folder/ZIP export; notes and attachments; link-depth limit; backlinks; exclusions | Same bundle goal; reviewed file tree with per-file choices; no depth setting |
 | [`markdown export`](https://community.obsidian.md/plugins/obsidian-markdown-export-plugin) | Note/folder export with images and embeds; Markdown or HTML; no linked-note traversal | Broader file collection: offers linked notes individually; EPUB and PDF instead of HTML |
 | [`Markdown to CHM`](https://community.obsidian.md/plugins/md-to-chm) | One or many notes with attachments compiled to a CHM help file; links rewritten to its pages; Windows-only | Same rendered single-document idea; different formats: EPUB and PDF, and Markdown bundles; linked notes offered in a tree |
 | [`Note Courier`](https://community.obsidian.md/plugins/note-courier) | One note and its images copied to another vault through the clipboard; desktop-only | Broader collection: linked notes and any attachment; writes a bundle rather than into a vault |

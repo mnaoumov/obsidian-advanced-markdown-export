@@ -54,7 +54,14 @@ export interface Dependency {
   readonly file: null | TFile;
 
   /**
-   * Whether the link that produced this dependency was an embed rather than a plain link.
+   * Whether this dependency is a file that links TO the resolved one, rather than a file the resolved one
+   * links to. A backlink never arrives checked.
+   */
+  readonly isBacklink: boolean;
+
+  /**
+   * Whether the link that produced this dependency was an embed rather than a plain link. Always `false`
+   * for a backlink.
    */
   readonly isEmbed: boolean;
 
@@ -131,6 +138,58 @@ export class DependencyResolver {
       dependencies.push(dependency);
     }
 
+    if (this.settings.shouldOfferBacklinks) {
+      for (const dependency of this.getBacklinkDependencies(file)) {
+        // A note that both links here and is linked from here is already offered, as the outgoing link.
+        if (seenPaths.has(dependency.path)) {
+          continue;
+        }
+
+        seenPaths.add(dependency.path);
+
+        if (this.isIgnored(dependency)) {
+          continue;
+        }
+
+        dependencies.push(dependency);
+      }
+    }
+
+    return dependencies;
+  }
+
+  /**
+   * The files that link to `file`, in the metadata cache's own order.
+   *
+   * Read from the public `resolvedLinks` graph rather than from the internal backlink index, so it needs no
+   * private API and no other plugin. Walking the whole graph is linear in the vault's link count, which is
+   * paid only when the user opens or ticks one row.
+   */
+  private getBacklinkDependencies(file: TFile): Dependency[] {
+    const dependencies: Dependency[] = [];
+
+    for (const [sourcePath, destinations] of Object.entries(this.app.metadataCache.resolvedLinks)) {
+      // A self-link needs no guard: the note's own links have already offered it, so `resolve` drops it as seen.
+      if (!Object.hasOwn(destinations, file.path)) {
+        continue;
+      }
+
+      const sourceFile = this.app.vault.getFileByPath(sourcePath);
+
+      if (!sourceFile) {
+        continue;
+      }
+
+      dependencies.push({
+        file: sourceFile,
+        isBacklink: true,
+        isEmbed: false,
+        kind: this.toKind(sourceFile, false),
+        path: sourceFile.path,
+        subpath: ''
+      });
+    }
+
     return dependencies;
   }
 
@@ -197,6 +256,7 @@ export class DependencyResolver {
 
     return {
       file,
+      isBacklink: false,
       isEmbed,
       kind: this.toKind(file, isEmbed),
       path: file?.path ?? linkPath,

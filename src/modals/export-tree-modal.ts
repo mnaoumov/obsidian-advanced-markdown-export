@@ -245,6 +245,15 @@ class ExportTreeModal extends Modal {
       text: node.path
     });
 
+    if (node.isBacklink) {
+      innerEl.createSpan({
+        cls: 'advanced-markdown-export-backlink-badge',
+        text: 'Links here'
+      });
+      selfEl.addClass('advanced-markdown-export-backlink');
+      selfEl.setAttr('title', 'This note links to the row above it. Tick it to include it.');
+    }
+
     if (node.file) {
       selfEl
         .createDiv({ cls: 'tree-item-flair-outer' })

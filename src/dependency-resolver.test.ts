@@ -170,6 +170,68 @@ describe('DependencyResolver', () => {
     expect(await resolve('A.md', '# A\n\nJust prose.')).toEqual([]);
   });
 
+  describe('backlinks', () => {
+    it('should offer no backlinks while the setting is off', async () => {
+      const hub = createFile('Hub.md', '# Hub');
+      createFile('Spoke.md', 'See [[Hub]].');
+
+      expect(await createResolver().resolve(hub)).toEqual([]);
+    });
+
+    it('should offer the notes linking to a file after its own links, a self-link only once', async () => {
+      settings.shouldOfferBacklinks = true;
+      createFile('Other.md', '# Other');
+      const hub = createFile('Hub.md', 'See [[Other]] and [[Hub]].');
+      createFile('Spoke.md', 'See [[Hub]].');
+
+      const dependencies = await createResolver().resolve(hub);
+
+      expect(dependencies.map((dependency) => [dependency.path, dependency.isBacklink])).toEqual([
+        ['Other.md', false],
+        ['Hub.md', false],
+        ['Spoke.md', true]
+      ]);
+      expect(dependencies[2]).toMatchObject({
+        isEmbed: false,
+        kind: DependencyKind.Note,
+        subpath: ''
+      });
+    });
+
+    it('should keep a note that both links here and is linked from here once, as the outgoing link', async () => {
+      settings.shouldOfferBacklinks = true;
+      createFile('Spoke.md', 'See [[Hub]].');
+      const hub = createFile('Hub.md', 'See [[Spoke]].');
+
+      expect(await createResolver().resolve(hub)).toEqual([
+        expect.objectContaining({ isBacklink: false, path: 'Spoke.md' })
+      ]);
+    });
+
+    it('should apply the ignore filters to backlinks too', async () => {
+      settings.shouldOfferBacklinks = true;
+      settings.ignoredFolders = ['Archive'];
+      settings.ignoredTags = ['draft'];
+      app.vault.createFolderSync__('Archive');
+      const hub = createFile('Hub.md', '# Hub');
+      createFile('Archive/Old.md', 'See [[Hub]].');
+      createFile('Draft.md', 'See [[Hub]].\n\n#draft');
+      createFile('Kept.md', 'See [[Hub]].');
+
+      const dependencies = await createResolver().resolve(hub);
+
+      expect(dependencies.map((dependency) => dependency.path)).toEqual(['Kept.md']);
+    });
+
+    it('should skip a resolved-links entry whose source file no longer exists', async () => {
+      settings.shouldOfferBacklinks = true;
+      const hub = createFile('Hub.md', '# Hub');
+      app.metadataCache.resolvedLinks['Gone.md'] = { 'Hub.md': 1 };
+
+      expect(await createResolver().resolve(hub)).toEqual([]);
+    });
+  });
+
   describe('canvas files', () => {
     it('should resolve a canvas file node as an embed', async () => {
       createFile('B.md', '# B');

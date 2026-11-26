@@ -68,6 +68,17 @@
     white-space: nowrap;
   }
 
+  /* A note that links TO its parent row, offered when Offer backlinks is on. */
+  .advanced-markdown-export-backlink-badge {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-size: var(--font-smallest);
+    padding: 0 var(--size-4-1);
+    white-space: nowrap;
+  }
+
   /* An occurrence of a file that is already included above: shown, but not the live checkbox. */
   .advanced-markdown-export-repeat {
     cursor: pointer;
