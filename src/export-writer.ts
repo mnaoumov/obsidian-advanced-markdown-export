@@ -22,6 +22,11 @@ import { DanglingLinkAction } from './plugin-settings.ts';
  */
 export interface ExportBundleParams {
   /**
+   * Stops the export between files once aborted. The files already written stay written.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
    * An Obsidian app instance.
    */
   readonly app: App;
@@ -30,6 +35,11 @@ export interface ExportBundleParams {
    * The files to write, in the order the tree owns them.
    */
   readonly files: readonly TFile[];
+
+  /**
+   * Called after each file is written.
+   */
+  readonly onProgress?: ExportProgressListener;
 
   /**
    * The settings, read for the dangling-link policy.
@@ -41,6 +51,41 @@ export interface ExportBundleParams {
    */
   readonly target: ExportTarget;
 }
+
+/**
+ * What {@link exportBundle} did.
+ */
+export interface ExportBundleResult {
+  /**
+   * Whether the export was cancelled before its last file.
+   */
+  readonly isCancelled: boolean;
+
+  /**
+   * How many files were written.
+   */
+  readonly writtenCount: number;
+}
+
+/**
+ * How far an export has got.
+ */
+export interface ExportProgress {
+  /**
+   * How many items are done.
+   */
+  readonly processed: number;
+
+  /**
+   * How many items there are.
+   */
+  readonly total: number;
+}
+
+/**
+ * Hears how far an export has got.
+ */
+export type ExportProgressListener = (progress: ExportProgress) => void;
 
 /**
  * Where a bundle goes. The one seam between "which bytes travel" and "where they land", so a folder, a
@@ -85,10 +130,13 @@ interface ConvertLinkParams {
  * a canvas whose node points at an excluded file keeps that node as it was, whatever the dangling-link
  * setting says.
  *
+ * An abort is honoured between files. The bundle is still finished, so it holds every file written
+ * before the abort: a folder keeps them, and a ZIP is written with them.
+ *
  * @param params - The parameters for the export.
- * @returns A {@link Promise} that resolves when the bundle is complete.
+ * @returns A {@link Promise} that resolves with what was written once the bundle is complete.
  */
-export async function exportBundle(params: ExportBundleParams): Promise<void> {
+export async function exportBundle(params: ExportBundleParams): Promise<ExportBundleResult> {
   const {
     app,
     files,
@@ -96,8 +144,15 @@ export async function exportBundle(params: ExportBundleParams): Promise<void> {
     target
   } = params;
   const exportedPaths = new Set<string>(files.map((file) => file.path));
+  let writtenCount = 0;
+  let isCancelled = false;
 
   for (const file of files) {
+    if (params.abortSignal?.aborted) {
+      isCancelled = true;
+      break;
+    }
+
     const data = isMarkdownFile(file)
       ? new TextEncoder().encode(
         await rewriteLinks({
@@ -110,9 +165,12 @@ export async function exportBundle(params: ExportBundleParams): Promise<void> {
       : new Uint8Array(await app.vault.readBinary(file));
 
     await target.writeFile(file.path, data);
+    writtenCount++;
+    params.onProgress?.({ processed: writtenCount, total: files.length });
   }
 
   await target.finish();
+  return { isCancelled, writtenCount };
 }
 
 /**

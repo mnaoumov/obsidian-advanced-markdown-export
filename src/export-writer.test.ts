@@ -229,4 +229,50 @@ describe('exportBundle', () => {
       expect(getWrittenText('A.md')).toBe('Before\nSee B\nAfter');
     });
   });
+
+  describe('progress and cancel', () => {
+    it('should report each written file and say it was not cancelled', async () => {
+      const files = [createFile('A.md', '# A'), createFile('B.md', '# B')];
+      const progress: string[] = [];
+
+      const result = await exportBundle({
+        app: app.asOriginalType__(),
+        files,
+        onProgress: ({ processed, total }) => {
+          progress.push(`${String(processed)}/${String(total)}`);
+        },
+        settings,
+        target
+      });
+
+      expect(progress).toEqual(['1/2', '2/2']);
+      expect(result).toEqual({ isCancelled: false, writtenCount: 2 });
+    });
+
+    /*
+     * The bundle is still finished, so a ZIP holds the files written before the abort rather than
+     * nothing at all.
+     */
+    it('should stop between files once aborted, keep what was written and still finish the bundle', async () => {
+      const files = [createFile('A.md', '# A'), createFile('B.md', '# B'), createFile('C.md', '# C')];
+      const abortController = new AbortController();
+
+      const result = await exportBundle({
+        abortSignal: abortController.signal,
+        app: app.asOriginalType__(),
+        files,
+        onProgress: ({ processed }) => {
+          if (processed === 2) {
+            abortController.abort();
+          }
+        },
+        settings,
+        target
+      });
+
+      expect([...target.writtenFiles.keys()]).toEqual(['A.md', 'B.md']);
+      expect(result).toEqual({ isCancelled: true, writtenCount: 2 });
+      expect(target.finishCount).toBe(1);
+    });
+  });
 });

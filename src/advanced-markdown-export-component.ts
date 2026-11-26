@@ -1,5 +1,8 @@
 import type { CommandRegistrar } from '@mnaoumov/obsidian-lib/command-registrar';
-import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type {
+  PluginNoticeComponent,
+  PluginNoticeComponentDelayedNotice
+} from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
 import type { MenuEventRegistrar } from '@mnaoumov/obsidian-lib/menu-event-registrar';
 import type {
   App,
@@ -20,8 +23,15 @@ import {
   TFolder
 } from 'obsidian';
 
-import type { RenderedNote } from './document-export/note-renderer.ts';
-import type { ExportDestination } from './export-destination/export-destination.ts';
+import type {
+  RenderedNote,
+  RenderedNotes
+} from './document-export/note-renderer.ts';
+import type {
+  ExportDestination,
+  ResolvedExportFile
+} from './export-destination/export-destination.ts';
+import type { ExportBundleResult } from './export-writer.ts';
 import type { ReadonlyPluginSettings } from './plugin-settings.ts';
 
 import { DependencyResolver } from './dependency-resolver.ts';
@@ -65,6 +75,16 @@ interface AdvancedMarkdownExportComponentExportDocumentParams {
    */
   readonly rootNote: null | TFile;
   readonly settings: ReadonlyPluginSettings;
+}
+
+interface AdvancedMarkdownExportComponentWriteDocumentParams {
+  readonly abortSignal: AbortSignal;
+  readonly exportParams: AdvancedMarkdownExportComponentExportDocumentParams;
+  readonly formatName: string;
+  readonly noteCount: number;
+  readonly progressNotice: PluginNoticeComponentDelayedNotice;
+  readonly renderedNotes: RenderedNotes;
+  readonly resolvedFile: ResolvedExportFile;
 }
 
 type SettingsProvider = () => ReadonlyPluginSettings;
@@ -173,33 +193,44 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
       return;
     }
 
-    this.pluginNoticeComponent.showNotice(`Rendering ${formatCount(noteCount, 'note')} to ${formatName}...`);
-    const renderedNotes = await renderNotes({
-      app: this.app,
-      files: params.files,
-      noteHrefResolver: isPdf ? (anchorId): string => `#${anchorId}` : getChapterFileName,
-      settings: params.settings
+    const abortController = new AbortController();
+    const progressNotice = this.pluginNoticeComponent.showNoticeAfterDelay({
+      abortController,
+      content: `Rendering ${formatCount(noteCount, 'note')} to ${formatName}...`
     });
 
+    let message: string;
+
     try {
-      const data = isPdf
-        ? await printPdf(renderedNotes.notes, params)
-        : await buildEpubFromNotes({
-          app: this.app,
-          metadata: resolveBookMetadata({
-            app: this.app,
-            fallbackTitle: params.bundleName,
-            rootNote: params.rootNote
-          }),
-          modified: new Date(),
-          notes: renderedNotes.notes
+      const renderedNotes = await renderNotes({
+        abortSignal: abortController.signal,
+        app: this.app,
+        files: params.files,
+        noteHrefResolver: isPdf ? (anchorId): string => `#${anchorId}` : getChapterFileName,
+        onProgress: ({ processed, total }) => {
+          progressNotice.setContent(`Rendering ${String(processed)} of ${formatCount(total, 'note')} to ${formatName}...`);
+        },
+        settings: params.settings
+      });
+
+      try {
+        message = await this.writeDocument({
+          abortSignal: abortController.signal,
+          exportParams: params,
+          formatName,
+          noteCount,
+          progressNotice,
+          renderedNotes,
+          resolvedFile
         });
-      await resolvedFile.write(data);
+      } finally {
+        renderedNotes.dispose();
+      }
     } finally {
-      renderedNotes.dispose();
+      progressNotice.dispose();
     }
 
-    this.pluginNoticeComponent.showNotice(`Exported ${formatCount(noteCount, 'note')} to ${resolvedFile.description}`);
+    this.pluginNoticeComponent.showNotice(message);
   }
 
   private handleFileMenu(menu: Menu, abstractFile: TAbstractFile): void {
@@ -280,15 +311,70 @@ export class AdvancedMarkdownExportComponent extends ComponentEx {
       return;
     }
 
-    await exportBundle({
-      app: this.app,
-      files: choice.files,
-      settings,
-      target: resolvedTarget.target
+    const fileCount = choice.files.length;
+    const abortController = new AbortController();
+    const progressNotice = this.pluginNoticeComponent.showNoticeAfterDelay({
+      abortController,
+      content: `Writing ${formatCount(fileCount, 'file')}...`
     });
+    let result: ExportBundleResult;
+
+    try {
+      result = await exportBundle({
+        abortSignal: abortController.signal,
+        app: this.app,
+        files: choice.files,
+        onProgress: ({ processed, total }) => {
+          progressNotice.setContent(`Writing ${String(processed)} of ${formatCount(total, 'file')}...`);
+        },
+        settings,
+        target: resolvedTarget.target
+      });
+    } finally {
+      progressNotice.dispose();
+    }
+
     this.pluginNoticeComponent.showNotice(
-      `Exported ${formatCount(choice.files.length, 'file')} to ${resolvedTarget.description}`
+      result.isCancelled
+        ? `Cancelled after writing ${String(result.writtenCount)} of ${formatCount(fileCount, 'file')} to ${resolvedTarget.description}. The files written so far are kept.`
+        : `Exported ${formatCount(fileCount, 'file')} to ${resolvedTarget.description}`
     );
+  }
+
+  /**
+   * Builds and writes the document from the rendered notes, unless the export was cancelled first.
+   *
+   * @returns The message reporting what happened.
+   */
+  private async writeDocument(params: AdvancedMarkdownExportComponentWriteDocumentParams): Promise<string> {
+    const { formatName, noteCount, renderedNotes } = params;
+
+    if (renderedNotes.isCancelled) {
+      return `Cancelled after rendering ${String(renderedNotes.notes.length)} of ${formatCount(noteCount, 'note')}. No ${formatName} was written.`;
+    }
+
+    params.progressNotice.setContent(`Writing the ${formatName}...`);
+    const { exportParams } = params;
+    const data = exportParams.format === ExportFormat.Pdf
+      ? await printPdf(renderedNotes.notes, exportParams)
+      : await buildEpubFromNotes({
+        app: this.app,
+        metadata: resolveBookMetadata({
+          app: this.app,
+          fallbackTitle: exportParams.bundleName,
+          rootNote: exportParams.rootNote
+        }),
+        modified: new Date(),
+        notes: renderedNotes.notes
+      });
+
+    // The Cancel button stays up while the document is built, so a press then still writes nothing.
+    if (params.abortSignal.aborted) {
+      return `Cancelled. No ${formatName} was written.`;
+    }
+
+    await params.resolvedFile.write(data);
+    return `Exported ${formatCount(noteCount, 'note')} to ${params.resolvedFile.description}`;
   }
 }
 
