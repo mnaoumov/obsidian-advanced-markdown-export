@@ -228,6 +228,26 @@ describe('showExportTreeModal', () => {
     await promise;
   });
 
+  it('should mark a backlink row with a badge, unchecked and enabled', async () => {
+    settings.shouldOfferBacklinks = true;
+    app.vault.createSync__('Hub.md', '# Hub');
+    app.vault.createSync__('Spoke.md', 'See [[Hub]].');
+    const forest = createForest(['Hub.md']);
+    await forest.expand(forest.getRootIds()[0] ?? '');
+    const { contentEl, promise } = openModal(forest);
+
+    const backlinkEl = contentEl.querySelector('.advanced-markdown-export-backlink');
+    expect(backlinkEl?.querySelector('.advanced-markdown-export-path')?.textContent).toBe('Spoke.md');
+    expect(backlinkEl?.querySelector('.advanced-markdown-export-backlink-badge')?.textContent).toBe('Links here');
+    expect(backlinkEl?.getAttribute('title')).toContain('links to the row above');
+
+    const checkbox = backlinkEl?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    expect(checkbox?.checked).toBe(false);
+    expect(checkbox?.disabled).toBe(false);
+
+    await promise;
+  });
+
   it('should grey out an unresolved link and refuse to tick it', async () => {
     app.vault.createSync__('A.md', 'See [[Missing]].');
     const forest = createForest(['A.md']);

@@ -62,6 +62,11 @@ describe('PluginSettings', () => {
     expect(settings.renderedCodeBlockLanguages).toEqual(['dataview', 'dataviewjs', 'tasks']);
   });
 
+  it('should not offer backlinks by default', () => {
+    const settings = new PluginSettings();
+    expect(settings.shouldOfferBacklinks).toBe(false);
+  });
+
   it('should not treat embeds as attachments by default', () => {
     const settings = new PluginSettings();
     expect(settings.shouldTreatEmbedsAsAttachments).toBe(false);

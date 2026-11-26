@@ -131,6 +131,15 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         }
       }),
       this.settingEx({
+        desc: 'Also offer the notes that link to a note, beside the ones it links to. They arrive unchecked; tick one to include it.',
+        name: 'Offer backlinks',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({ propertyName: 'shouldOfferBacklinks', valueComponent: toggle });
+          });
+        }
+      }),
+      this.settingEx({
         desc: 'Replace each plugin code block, such as a query, with what it renders, so a reader without the plugin sees the result instead of the query.',
         name: 'Render plugin code blocks',
         render: (setting) => {

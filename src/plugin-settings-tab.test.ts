@@ -46,6 +46,7 @@ const EXPECTED_BOUND_KEYS: (keyof PluginSettings)[] = [
   'shouldCheckLinkedNotesByDefault',
   'shouldCreateZip',
   'shouldIncludeSubfolders',
+  'shouldOfferBacklinks',
   'shouldRenderPluginCodeBlocks',
   'shouldTreatEmbedsAsAttachments'
 ];

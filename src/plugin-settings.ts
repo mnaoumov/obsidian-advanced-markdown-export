@@ -141,6 +141,12 @@ export class PluginSettings {
   public shouldIncludeSubfolders = true;
 
   /**
+   * Whether a note's tree also offers the notes that link TO it, beside the ones it links to. Off by
+   * default: a hub note can have hundreds of backlinks. A backlink row always arrives unchecked.
+   */
+  public shouldOfferBacklinks = false;
+
+  /**
    * Whether a plugin code block - a `Dataview` or `Tasks` query - is replaced in the exported note by what it
    * renders, converted to markdown. Off by default: it changes the exported bytes, and a recipient who has
    * the plugin may want the live query.

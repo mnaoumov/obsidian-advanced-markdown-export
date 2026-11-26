@@ -250,6 +250,68 @@ describe('ExportForest', () => {
     });
   });
 
+  describe('backlinks', () => {
+    function createHubGraph(): void {
+      app.vault.createSync__('Hub.md', '# Hub');
+      app.vault.createSync__('Spoke1.md', 'Part of [[Hub]], see [[Spoke2]].');
+      app.vault.createSync__('Spoke2.md', 'Part of [[Hub]].');
+    }
+
+    it('should offer no backlink rows while the setting is off', async () => {
+      createHubGraph();
+      const forest = createForest(['Hub.md']);
+      const rootId = forest.getRootIds()[0] ?? '';
+      await forest.expand(rootId);
+
+      expect(forest.getNode(rootId).childIds).toEqual([]);
+    });
+
+    it('should offer the notes linking to a note as unchecked backlink rows', async () => {
+      settings.shouldOfferBacklinks = true;
+      createHubGraph();
+      const forest = createForest(['Hub.md']);
+      const rootId = forest.getRootIds()[0] ?? '';
+      await forest.expand(rootId);
+
+      const spoke1Id = findChild(forest, rootId, 'Spoke1.md');
+      expect(forest.getNode(spoke1Id).isBacklink).toBe(true);
+      expect(forest.getNode(findChild(forest, rootId, 'Spoke2.md')).isBacklink).toBe(true);
+      expect(getCheckedPaths(forest, rootId)).toEqual([]);
+      expect(forest.getExportPaths()).toEqual(['Hub.md']);
+    });
+
+    it('should keep a backlink row unchecked even when linked notes arrive checked', async () => {
+      settings.shouldOfferBacklinks = true;
+      settings.shouldCheckLinkedNotesByDefault = true;
+      createHubGraph();
+      const forest = createForest(['Hub.md']);
+      const rootId = forest.getRootIds()[0] ?? '';
+      await forest.expand(rootId);
+
+      expect(getCheckedPaths(forest, rootId)).toEqual([]);
+    });
+
+    it('should expand a backlink row only when it is ticked', async () => {
+      settings.shouldOfferBacklinks = true;
+      createHubGraph();
+      const forest = createForest(['Hub.md']);
+      const rootId = forest.getRootIds()[0] ?? '';
+      await forest.expand(rootId);
+
+      expect(resolvedPaths).toEqual(['Hub.md']);
+
+      const spoke1Id = findChild(forest, rootId, 'Spoke1.md');
+      await forest.setChecked(spoke1Id, true);
+
+      expect(resolvedPaths).toEqual(['Hub.md', 'Spoke1.md']);
+      expect(forest.getExportPaths()).toEqual(['Hub.md', 'Spoke1.md']);
+
+      // Spoke1 links to the hub (a repeat of the root) and to Spoke2 (a repeat of the hub's backlink row).
+      expect(forest.isOwner(findChild(forest, spoke1Id, 'Hub.md'))).toBe(false);
+      expect(forest.isOwner(findChild(forest, spoke1Id, 'Spoke2.md'))).toBe(false);
+    });
+  });
+
   describe('expand on tick', () => {
     it('should expand a note when it is ticked, applying the defaults one level deeper', async () => {
       createExampleGraph();

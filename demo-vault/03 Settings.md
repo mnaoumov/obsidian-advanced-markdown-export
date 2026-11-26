@@ -17,6 +17,8 @@ Open **Settings -> Community plugins -> `Advanced Markdown Export`**. Each optio
   - a safety cap on how deep the tree may grow. Not the depth control — depth is driven by which notes you tick. The cap only stops a pathological graph from expanding without bound.
 - `shouldIncludeSubfolders`
   - whether a folder root also takes the notes of its subfolders as roots.
+- `shouldOfferBacklinks`
+  - whether a note's row also offers the notes that link **to** it, marked `Links here`, beside the ones it links to. Off by default, because a hub note can have hundreds of backlinks. A backlink row always arrives unchecked, whatever `shouldCheckLinkedNotesByDefault` says; tick one to include it, and it expands like any other note.
 - `ignoredFolders`
   - files in these folders are never offered as dependencies.
 - `ignoredTags`
