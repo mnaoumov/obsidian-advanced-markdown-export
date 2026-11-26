@@ -69,6 +69,24 @@ describe('buildEpub', () => {
     expect(opf).toContain('<item id="chapter-1" href="text/note-1.xhtml" media-type="application/xhtml+xml"/>');
     expect(opf).toContain('<item id="resource-1" href="text/media/media-1.png" media-type="image/png"/>');
     expect(opf.indexOf('idref="chapter-1"')).toBeLessThan(opf.indexOf('idref="chapter-2"'));
+    expect(opf).not.toContain('dc:creator');
+    expect(opf).not.toContain('cover');
+  });
+
+  it('should write each author as a creator, and mark the cover resource for EPUB 3 and EPUB 2 readers', () => {
+    const opf = strFromU8(
+      unzipSync(buildEpub({ ...createParams(), authors: ['Ann & Bo', 'Cy'], coverFileName: 'media-1.png' }))['OEBPS/content.opf'] ?? new Uint8Array()
+    );
+
+    expect(opf).toContain('<dc:creator>Ann &amp; Bo</dc:creator>\n<dc:creator>Cy</dc:creator>\n<dc:language>en</dc:language>');
+    expect(opf).toContain('<item id="resource-1" href="text/media/media-1.png" media-type="image/png" properties="cover-image"/>');
+    expect(opf).toContain('<meta name="cover" content="resource-1"/>');
+  });
+
+  it('should mark no cover when the cover file name names no resource', () => {
+    const opf = strFromU8(unzipSync(buildEpub({ ...createParams(), coverFileName: 'missing.png' }))['OEBPS/content.opf'] ?? new Uint8Array());
+
+    expect(opf).not.toContain('cover');
   });
 
   it('should give both tables of contents an entry per chapter', () => {

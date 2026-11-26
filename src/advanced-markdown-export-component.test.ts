@@ -467,9 +467,9 @@ describe('AdvancedMarkdownExportComponent', () => {
       vi.mocked(printNotesToPdf).mockResolvedValue(new Uint8Array([2]));
     });
 
-    async function startExportOfA(): Promise<void> {
+    async function startExportOfA(content = '# A'): Promise<void> {
       createComponent();
-      app.vault.createSync__('A.md', '# A');
+      app.vault.createSync__('A.md', content);
       const menu = createMenu();
       fileMenuHandlers[0]?.(castTo<MenuOriginal>(menu), createNote('A.md'), 'file-explorer');
       menu.menuItems__[0]?.onClick__?.(castTo<MouseEvent>({}));
@@ -489,11 +489,42 @@ describe('AdvancedMarkdownExportComponent', () => {
 
       expect(vi.mocked(resolveFileMock).mock.calls[0]?.[0]).toMatchObject({ bundleName: 'A', extension: 'epub', formatName: 'EPUB' });
       expect(vi.mocked(renderNotes).mock.calls[0]?.[0].noteHrefResolver('note-1')).toBe('note-1.xhtml');
-      expect(vi.mocked(buildEpubFromNotes).mock.calls[0]?.[0].title).toBe('A');
+      expect(vi.mocked(buildEpubFromNotes).mock.calls[0]?.[0].metadata).toMatchObject({ authors: [], coverFile: null, title: 'A' });
       expect(writtenFiles.get('Book')).toEqual(new Uint8Array([1]));
       expect(disposeMock).toHaveBeenCalled();
       expect(showNoticeMock).toHaveBeenCalledWith('Rendering 1 note to EPUB...');
       expect(showNoticeMock).toHaveBeenCalledWith('Exported 1 note to Book');
+    });
+
+    it('should take the book metadata from the properties of the note the export started from', async () => {
+      acceptModal(ExportFormat.Epub);
+      await startExportOfA('---\ntitle: The Book\nauthor: Ann\n---\n# A');
+
+      expect(vi.mocked(buildEpubFromNotes).mock.calls[0]?.[0].metadata).toMatchObject({ authors: ['Ann'], title: 'The Book' });
+    });
+
+    it('should not take the book metadata from a note inside a folder root or a multi-selection', async () => {
+      acceptModal(ExportFormat.Epub);
+      createComponent();
+      app.vault.createFolderSync__('Example');
+      app.vault.createSync__('Example/A.md', '---\ntitle: Ignored\n---\n# A');
+      app.vault.createSync__('B.md', '---\ntitle: Ignored\n---\n# B');
+
+      const folderMenu = createMenu();
+      fileMenuHandlers[0]?.(
+        castTo<MenuOriginal>(folderMenu),
+        castTo<TAbstractFileOriginal>(app.vault.getFolderByPath('Example')?.asOriginalType2__()),
+        'file-explorer'
+      );
+      folderMenu.menuItems__[0]?.onClick__?.(castTo<MouseEvent>({}));
+      await flushExport();
+
+      const selectionMenu = createMenu();
+      filesMenuHandlers[0]?.(castTo<MenuOriginal>(selectionMenu), [createNote('Example/A.md'), createNote('B.md')], 'file-explorer');
+      selectionMenu.menuItems__[0]?.onClick__?.(castTo<MouseEvent>({}));
+      await flushExport();
+
+      expect(vi.mocked(buildEpubFromNotes).mock.calls.map((call) => call[0].metadata.title)).toEqual(['Example', 'Export']);
     });
 
     it('should write a PDF on the configured page size, its links pointing inside the document', async () => {

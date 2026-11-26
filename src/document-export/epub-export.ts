@@ -3,11 +3,9 @@ import type {
   TFile
 } from 'obsidian';
 
-import {
-  getLanguage,
-  parseLinktext
-} from 'obsidian';
+import { parseLinktext } from 'obsidian';
 
+import type { BookMetadata } from './book-metadata.ts';
 import type {
   EpubChapter,
   EpubResource
@@ -32,6 +30,11 @@ export interface BuildEpubFromNotesParams {
   readonly app: App;
 
   /**
+   * The book's title, authors, language and cover.
+   */
+  readonly metadata: BookMetadata;
+
+  /**
    * When the book was made.
    */
   readonly modified: Date;
@@ -40,11 +43,6 @@ export interface BuildEpubFromNotesParams {
    * The rendered notes, in reading order. Their links must already point at `<anchorId>.xhtml`.
    */
   readonly notes: readonly RenderedNote[];
-
-  /**
-   * The book's title.
-   */
-  readonly title: string;
 }
 
 /**
@@ -53,7 +51,8 @@ export interface BuildEpubFromNotesParams {
  *
  * An image is packed when the embed around it resolves to a vault file; one image file embedded twice is
  * packed once. A remote image keeps its URL, and any other image - one with nothing in the vault behind
- * it - is replaced by its alt text, because a book cannot reach `app://`.
+ * it - is replaced by its alt text, because a book cannot reach `app://`. The cover image is packed
+ * first, and a note embedding it shares the same copy.
  *
  * @param params - The parameters.
  * @returns The book's bytes.
@@ -63,6 +62,24 @@ export async function buildEpubFromNotes(params: BuildEpubFromNotesParams): Prom
   const resources: EpubResource[] = [];
   const chapters: EpubChapter[] = [];
   const serializer = new XMLSerializer();
+  const { metadata } = params;
+
+  async function packImage(imageFile: TFile): Promise<string> {
+    let fileName = resourceFileNamesByPath.get(imageFile.path);
+
+    if (fileName === undefined) {
+      fileName = `media-${String(resources.length + 1)}.${imageFile.extension}`;
+      resourceFileNamesByPath.set(imageFile.path, fileName);
+      resources.push({
+        data: new Uint8Array(await params.app.vault.readBinary(imageFile)),
+        fileName
+      });
+    }
+
+    return fileName;
+  }
+
+  const coverFileName = metadata.coverFile ? await packImage(metadata.coverFile) : undefined;
 
   for (const note of params.notes) {
     const clone = note.element.cloneNode(true) as HTMLElement;
@@ -75,17 +92,7 @@ export async function buildEpubFromNotes(params: BuildEpubFromNotesParams): Prom
       const imageFile = resolveEmbeddedFile(params.app, imgEl, note.file.path);
 
       if (imageFile) {
-        let fileName = resourceFileNamesByPath.get(imageFile.path);
-
-        if (fileName === undefined) {
-          fileName = `media-${String(resources.length + 1)}.${imageFile.extension}`;
-          resourceFileNamesByPath.set(imageFile.path, fileName);
-          resources.push({
-            data: new Uint8Array(await params.app.vault.readBinary(imageFile)),
-            fileName
-          });
-        }
-
+        const fileName = await packImage(imageFile);
         imgEl.setAttribute('src', `media/${fileName}`);
         imgEl.removeAttribute('srcset');
         continue;
@@ -104,12 +111,14 @@ export async function buildEpubFromNotes(params: BuildEpubFromNotesParams): Prom
   }
 
   return buildEpub({
+    authors: metadata.authors,
     chapters,
-    identifier: `urn:advanced-markdown-export:${encodeURIComponent(params.title)}:${String(params.modified.getTime())}`,
-    language: getLanguage(),
+    ...(coverFileName !== undefined && { coverFileName }),
+    identifier: `urn:advanced-markdown-export:${encodeURIComponent(metadata.title)}:${String(params.modified.getTime())}`,
+    language: metadata.language,
     modified: params.modified,
     resources,
-    title: params.title
+    title: metadata.title
   });
 }
 

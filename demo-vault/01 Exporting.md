@@ -79,6 +79,15 @@ The **Format** dropdown under the tree decides what the selection becomes. **Mar
 - **EPUB book** — a chapter per note, in tree order, with a table of contents. Images the notes embed are packed into the book. Works on every platform.
 - **PDF document** — each note starts on a new page, printed in the light theme with your theme and snippets applied, on the **PDF page size** you chose. Desktop only, because it is Electron that prints it; on a phone the dropdown does not offer it.
 
+When you export a single note as an EPUB book, that note's properties describe the book, each falling back on its own when it is missing:
+
+- `title`: the title an e-reader shelves the book under. Without it, the book is named after the note.
+- `author` (or `authors`): one name or a list of them. A wikilink to a person's note gives its display text.
+- `language` (or `lang`): a language tag such as `en` or `pt-BR`. Without one, Obsidian's interface language is used.
+- `cover`: an image in your vault, given as a path, a wikilink or an embed, for example `"[[Cover.png]]"`. A web address is not fetched.
+
+A folder or a multi-selection has no single note to speak for it, so its book takes the defaults.
+
 Only notes become chapters or pages. An attachment travels only as what a note embeds, so ticking an image on its own adds nothing.
 
 Links are settled for a document that has no vault around it. A link to another checked note jumps to that note inside the document. A link or embed whose target you left out follows **Dangling links**: kept as it is (a link then opens the note in Obsidian through an `obsidian://` link, and an embed stays rendered), replaced by its text, or removed. A link that points at nothing becomes its text.
