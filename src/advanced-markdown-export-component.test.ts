@@ -1,5 +1,9 @@
 import type { CommandRegistrar } from '@mnaoumov/obsidian-lib/command-registrar';
-import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type {
+  PluginNoticeComponent,
+  PluginNoticeComponentDelayedNotice,
+  PluginNoticeComponentShowNoticeAfterDelayParams
+} from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
 import type {
   FileMenuEventHandler,
   FilesMenuEventHandler,
@@ -77,6 +81,9 @@ describe('AdvancedMarkdownExportComponent', () => {
   let resolveFileMock: ExportDestination['resolveFile'];
   let resolveTargetMock: ExportDestination['resolveTarget'];
   let settings: PluginSettings;
+  let progressAbortControllers: AbortController[];
+  let progressContents: (DocumentFragment | string)[];
+  let progressDisposeCount: number;
   let showNoticeMock: PluginNoticeComponent['showNotice'];
   let writtenFiles: Map<string, Uint8Array>;
 
@@ -87,6 +94,9 @@ describe('AdvancedMarkdownExportComponent', () => {
     fileMenuHandlers = [];
     filesMenuHandlers = [];
     settings = new PluginSettings();
+    progressAbortControllers = [];
+    progressContents = [];
+    progressDisposeCount = 0;
     showNoticeMock = vi.fn<PluginNoticeComponent['showNotice']>();
     writtenFiles = new Map<string, Uint8Array>();
 
@@ -137,7 +147,28 @@ describe('AdvancedMarkdownExportComponent', () => {
           return { dispose: vi.fn(), [Symbol.dispose]: vi.fn() };
         }
       }),
-      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNotice: showNoticeMock }),
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({
+        showNotice: showNoticeMock,
+        showNoticeAfterDelay: (params: PluginNoticeComponentShowNoticeAfterDelayParams): PluginNoticeComponentDelayedNotice => {
+          if (params.abortController) {
+            progressAbortControllers.push(params.abortController);
+          }
+
+          // The component passes plain text, so there is no provider to resolve.
+          progressContents.push(castTo<string>(params.content));
+          function dispose(): void {
+            progressDisposeCount++;
+          }
+
+          return {
+            dispose,
+            setContent: (content: DocumentFragment | string): void => {
+              progressContents.push(content);
+            },
+            [Symbol.dispose]: dispose
+          };
+        }
+      }),
       settingsProvider: (): PluginSettings => settings
     });
     component.load();
@@ -415,6 +446,43 @@ describe('AdvancedMarkdownExportComponent', () => {
       expect(writtenFiles.size).toBe(0);
       expect(showNoticeMock).not.toHaveBeenCalled();
     });
+
+    it('should show the files written in a progress notice with a Cancel button, then take it down', async () => {
+      acceptModal();
+      await startExportOfA();
+
+      expect(progressAbortControllers).toHaveLength(1);
+      expect(progressContents).toEqual(['Writing 1 file...', 'Writing 1 of 1 file...']);
+      expect(progressDisposeCount).toBeGreaterThan(0);
+    });
+
+    /*
+     * Cancel is pressed while the first file is written, so the writer stops before the second one, and
+     * the notice says what was kept. It must not say `Exported `, which the integration suites wait on.
+     */
+    it('should stop between files on Cancel, keep what was written and say so', async () => {
+      acceptModal();
+      const target: ExportTarget = {
+        finish: () => noopAsync(),
+        writeFile: (relativePath, data) => {
+          writtenFiles.set(relativePath, data);
+          progressAbortControllers[0]?.abort();
+          return noopAsync();
+        }
+      };
+      vi.mocked(resolveTargetMock).mockResolvedValue({ description: 'Bundle', target });
+      createComponent();
+      app.vault.createSync__('A.md', '# A');
+      app.vault.createSync__('B.md', '# B');
+      const menu = createMenu();
+      filesMenuHandlers[0]?.(castTo<MenuOriginal>(menu), [createNote('A.md'), createNote('B.md')], 'file-explorer');
+      menu.menuItems__[0]?.onClick__?.(castTo<MouseEvent>({}));
+      await flushExport();
+
+      expect([...writtenFiles.keys()]).toEqual(['A.md']);
+      expect(showNoticeMock).toHaveBeenCalledWith('Cancelled after writing 1 of 2 files to Bundle. The files written so far are kept.');
+      expect(showNoticeMock).not.toHaveBeenCalledWith(expect.stringContaining('Exported '));
+    });
   });
 
   describe('the active-note command', () => {
@@ -462,7 +530,7 @@ describe('AdvancedMarkdownExportComponent', () => {
 
     beforeEach(() => {
       disposeMock = vi.fn();
-      vi.mocked(renderNotes).mockResolvedValue({ dispose: disposeMock, notes: [] });
+      vi.mocked(renderNotes).mockResolvedValue({ dispose: disposeMock, isCancelled: false, notes: [] });
       vi.mocked(buildEpubFromNotes).mockResolvedValue(new Uint8Array([1]));
       vi.mocked(printNotesToPdf).mockResolvedValue(new Uint8Array([2]));
     });
@@ -492,8 +560,43 @@ describe('AdvancedMarkdownExportComponent', () => {
       expect(vi.mocked(buildEpubFromNotes).mock.calls[0]?.[0].metadata).toMatchObject({ authors: [], coverFile: null, title: 'A' });
       expect(writtenFiles.get('Book')).toEqual(new Uint8Array([1]));
       expect(disposeMock).toHaveBeenCalled();
-      expect(showNoticeMock).toHaveBeenCalledWith('Rendering 1 note to EPUB...');
+      expect(progressContents).toEqual(['Rendering 1 note to EPUB...', 'Writing the EPUB...']);
       expect(showNoticeMock).toHaveBeenCalledWith('Exported 1 note to Book');
+    });
+
+    it('should report each rendered note in the progress notice', async () => {
+      acceptModal(ExportFormat.Epub);
+      vi.mocked(renderNotes).mockImplementation((params) => {
+        params.onProgress?.({ processed: 1, total: 1 });
+        return Promise.resolve({ dispose: disposeMock, isCancelled: false, notes: [] });
+      });
+      await startExportOfA();
+
+      expect(vi.mocked(renderNotes).mock.calls[0]?.[0].abortSignal).toBe(progressAbortControllers[0]?.signal);
+      expect(progressContents).toContain('Rendering 1 of 1 note to EPUB...');
+    });
+
+    it('should write no document when the rendering was cancelled, and say so', async () => {
+      acceptModal(ExportFormat.Epub);
+      vi.mocked(renderNotes).mockResolvedValue({ dispose: disposeMock, isCancelled: true, notes: [] });
+      await startExportOfA();
+
+      expect(buildEpubFromNotes).not.toHaveBeenCalled();
+      expect(writtenFiles.size).toBe(0);
+      expect(disposeMock).toHaveBeenCalled();
+      expect(showNoticeMock).toHaveBeenCalledWith('Cancelled after rendering 0 of 1 note. No EPUB was written.');
+    });
+
+    it('should write no document when Cancel is pressed while it is built', async () => {
+      acceptModal(ExportFormat.Pdf);
+      vi.mocked(printNotesToPdf).mockImplementation(() => {
+        progressAbortControllers[0]?.abort();
+        return Promise.resolve(new Uint8Array([2]));
+      });
+      await startExportOfA();
+
+      expect(writtenFiles.size).toBe(0);
+      expect(showNoticeMock).toHaveBeenCalledWith('Cancelled. No PDF was written.');
     });
 
     it('should take the book metadata from the properties of the note the export started from', async () => {

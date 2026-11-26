@@ -83,6 +83,8 @@ On the desktop, **Export** opens a system directory picker, so the bundle can la
 
 The **Format** dropdown under the tree turns the same selection into one document instead of a bundle: an **EPUB book** with a chapter per checked note, or, on the desktop, a **PDF document** with each note starting on a new page. Both are rendered the way Reading view shows them, embedded images included, and a link to another checked note jumps to it inside the document. The **Export format** setting picks which one the dropdown starts on. A book exported from a single note takes its title, author, language and cover image from that note's `title`, `author`, `language` and `cover` properties.
 
+A long export shows its progress in a notice with a **Cancel** button: the files written so far, or the notes rendered so far for an EPUB or a PDF. **Cancel** stops between files. A bundle keeps the files already written, and a ZIP is written with them. An EPUB or a PDF is written only once every note is rendered, so a cancelled one writes nothing.
+
 Notes built on `Dataview` or `Tasks` queries can travel as their results: turn on **Render plugin code blocks** and each query is replaced in the export by what it renders, converted to markdown, so a reader without the plugin sees the list rather than the query.
 
 ## See also

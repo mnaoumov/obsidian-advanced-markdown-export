@@ -107,6 +107,47 @@ describe('renderNotes', () => {
     expect(renderSpy).toHaveBeenCalledWith('Body B', expect.any(HTMLElement), 'B.md');
   });
 
+  it('should report each rendered note, and stop between notes once aborted', async () => {
+    mockApp.vault.createSync__('A.md', 'A');
+    mockApp.vault.createSync__('B.md', 'B');
+    mockApp.vault.createSync__('C.md', 'C');
+    mockRender((markdown, el) => {
+      el.createEl('p', { text: markdown });
+    });
+    const abortController = new AbortController();
+    const progress: string[] = [];
+
+    rendered = await renderNotes({
+      abortSignal: abortController.signal,
+      app,
+      files: ['A.md', 'B.md', 'C.md'].map((path) => getFile(path)),
+      noteHrefResolver: (anchorId) => `#${anchorId}`,
+      onProgress: ({ processed, total }) => {
+        progress.push(`${String(processed)}/${String(total)}`);
+        if (processed === 2) {
+          abortController.abort();
+        }
+      },
+      settings,
+      settleInMilliseconds: SHORT_SETTLE_IN_MILLISECONDS,
+      timeoutInMilliseconds: SHORT_TIMEOUT_IN_MILLISECONDS
+    });
+
+    expect(progress).toEqual(['1/3', '2/3']);
+    expect(rendered.isCancelled).toBe(true);
+    expect(rendered.notes.map((note) => note.file.path)).toEqual(['A.md', 'B.md']);
+  });
+
+  it('should not be cancelled when every note was rendered', async () => {
+    mockApp.vault.createSync__('A.md', 'A');
+    mockRender((markdown, el) => {
+      el.createEl('p', { text: markdown });
+    });
+
+    const result = await render(['A.md']);
+    expect(result.isCancelled).toBe(false);
+  });
+
   it('should settle on the default timings when none are given', async () => {
     mockApp.vault.createSync__('A.md', 'x');
     mockRender((markdown, el) => {

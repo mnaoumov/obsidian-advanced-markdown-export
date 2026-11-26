@@ -11,6 +11,7 @@ import {
   parseLinktext
 } from 'obsidian';
 
+import type { ExportProgressListener } from '../export-writer.ts';
 import type { ReadonlyPluginSettings } from '../plugin-settings.ts';
 
 import {
@@ -74,6 +75,12 @@ export interface RenderedNotes {
   readonly dispose: () => void;
 
   /**
+   * Whether the rendering was cancelled before its last note, so {@link RenderedNotes.notes} holds only
+   * the notes rendered before that.
+   */
+  readonly isCancelled: boolean;
+
+  /**
    * The notes, in export order.
    */
   readonly notes: readonly RenderedNote[];
@@ -83,6 +90,11 @@ export interface RenderedNotes {
  * The parameters for {@link renderNotes}.
  */
 export interface RenderNotesParams {
+  /**
+   * Stops the rendering between notes once aborted.
+   */
+  readonly abortSignal?: AbortSignal;
+
   /**
    * An Obsidian app instance.
    */
@@ -98,6 +110,11 @@ export interface RenderNotesParams {
    * How a link to an exported note is written.
    */
   readonly noteHrefResolver: NoteHrefResolver;
+
+  /**
+   * Called after each note is rendered.
+   */
+  readonly onProgress?: ExportProgressListener;
 
   /**
    * The settings, read for the dangling-link policy.
@@ -139,6 +156,8 @@ interface PolicyParams {
  * The caller owns the result and must dispose of it, which unloads every renderer child and removes the
  * host.
  *
+ * An abort is honoured between notes: the result then holds the notes rendered before it.
+ *
  * @param params - The parameters.
  * @returns The rendered notes.
  */
@@ -150,6 +169,7 @@ export async function renderNotes(params: RenderNotesParams): Promise<RenderedNo
   const component = new Component();
   component.load();
   const notes: RenderedNote[] = [];
+  let isCancelled = false;
 
   function dispose(): void {
     component.unload();
@@ -158,6 +178,11 @@ export async function renderNotes(params: RenderNotesParams): Promise<RenderedNo
 
   try {
     for (const [index, file] of noteFiles.entries()) {
+      if (params.abortSignal?.aborted) {
+        isCancelled = true;
+        break;
+      }
+
       const anchorId = getAnchorId(index);
       const element = hostEl.createDiv({ cls: 'advanced-markdown-export-document-note markdown-preview-view markdown-rendered' });
       element.id = anchorId;
@@ -187,6 +212,7 @@ export async function renderNotes(params: RenderNotesParams): Promise<RenderedNo
       applyEmbedPolicy(bodyEl, policyParams);
       applyLinkPolicy(bodyEl, policyParams);
       notes.push({ anchorId, element, file, title: file.basename });
+      params.onProgress?.({ processed: notes.length, total: noteFiles.length });
     }
   } catch (error) {
     dispose();
@@ -195,6 +221,7 @@ export async function renderNotes(params: RenderNotesParams): Promise<RenderedNo
 
   return {
     dispose,
+    isCancelled,
     notes
   };
 }
